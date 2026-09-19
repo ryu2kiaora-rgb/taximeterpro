@@ -172,85 +172,97 @@
         font-size: 0.45rem !important;
       }
 
-      /* 横画面：精算・事前確定運賃モーダルを左右に広げて1画面に収める */
+      /* 横画面：精算・事前確定運賃モーダルを「画面内に必ず収める」 */
       #settlementModal {
-        padding: 0.75rem !important;
+        position: fixed !important;
+        inset: 0 !important;
+        width: 100vw !important;
+        height: 100dvh !important;
+        padding: 4px !important;
+        overflow: hidden !important;
+        box-sizing: border-box !important;
       }
 
       #settlementModal > div {
-        width: 94vw !important;
-        max-width: 980px !important;
-        height: auto !important;
-        max-height: calc(100vh - 12px) !important;
-        padding: 0.65rem !important;
+        box-sizing: border-box !important;
+        width: min(96vw, 900px) !important;
+        max-width: 900px !important;
+        height: calc(100dvh - 8px) !important;
+        max-height: calc(100dvh - 8px) !important;
+        min-height: 0 !important;
+        padding: 0.45rem !important;
+        margin: 0 !important;
         overflow: hidden !important;
-        gap: 0.35rem !important;
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 0.25rem !important;
       }
 
       #settlementModal > div > div:first-child {
-        padding-bottom: 0.35rem !important;
+        flex: 0 0 auto !important;
+        padding-bottom: 0.25rem !important;
+        min-height: 0 !important;
       }
 
       #settlementModal > div > div:nth-child(2) {
+        flex: 1 1 auto !important;
+        min-height: 0 !important;
         margin: 0 !important;
+        display: grid !important;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) !important;
+        gap: 0.45rem !important;
+        align-items: start !important;
+        overflow: hidden !important;
       }
 
       #settlementModal > div > div:nth-child(2) > div {
+        min-width: 0 !important;
         min-height: 0 !important;
       }
 
       #settlementModal .bg-slate-950.p-3 {
-        padding: 0.5rem !important;
+        padding: 0.35rem !important;
       }
 
       #settlementModal .space-y-3 > div + div {
-        margin-top: 0.35rem !important;
+        margin-top: 0.2rem !important;
       }
 
       #settlementModal label {
-        margin-bottom: 0.2rem !important;
-        font-size: 0.65rem !important;
+        margin-bottom: 0.15rem !important;
+        font-size: 0.6rem !important;
+        line-height: 1.1 !important;
       }
 
       #settlementModal #modalFixedFareInput {
-        padding-top: 0.35rem !important;
-        padding-bottom: 0.35rem !important;
-        font-size: 1.05rem !important;
-      }
-
-      #settlementModal > div > div:nth-child(2) {
-        display: grid !important;
-        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) !important;
-        gap: 0.75rem !important;
-        align-items: start !important;
-      }
-
-      #settlementModal > div > div:nth-child(2) > div:first-child {
-        min-width: 0;
-      }
-
-      #settlementModal > div > div:nth-child(2) > div:last-child {
-        min-width: 0;
+        height: 2rem !important;
+        padding-top: 0.25rem !important;
+        padding-bottom: 0.25rem !important;
+        font-size: 1rem !important;
+        box-sizing: border-box !important;
       }
 
       #settlementModal #fareKeypad {
-        margin-top: 0.25rem !important;
-        gap: 0.2rem !important;
+        margin-top: 0.2rem !important;
+        gap: 0.15rem !important;
       }
 
       #settlementModal #fareKeypad button {
-        padding-top: 0.35rem !important;
-        padding-bottom: 0.35rem !important;
+        height: 2.05rem !important;
         min-height: 0 !important;
+        padding: 0.15rem !important;
+        line-height: 1 !important;
       }
 
       #settlementModal > div > div:last-child {
-        padding-top: 0.2rem !important;
+        flex: 0 0 auto !important;
+        padding-top: 0.1rem !important;
+        min-height: 0 !important;
       }
 
       #settlementModal > div > div:last-child button {
-        padding-top: 0.45rem !important;
-        padding-bottom: 0.45rem !important;
+        height: 2.15rem !important;
+        padding: 0.25rem !important;
       }
 
       /* 横画面では下の説明を折りたたみ、メーター本体を1画面に収める */
