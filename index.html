@@ -1,0 +1,1825 @@
+<!DOCTYPE html>
+<html lang="ja" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Soft Taxi Meter & RideShare Compare Pro</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            digital: ['Courier New', 'Courier', 'monospace'],
+            lcd: ['Consolas', 'Courier New', 'monospace']
+          }
+        }
+      }
+    }
+  </script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+  <style>
+    body {
+      background-color: #07090e;
+      color: #f3f4f6;
+      touch-action: manipulation;
+    }
+    .digital-glow {
+      text-shadow: 0 0 12px rgba(0, 255, 255, 0.7), 0 0 25px rgba(0, 255, 255, 0.3);
+    }
+    .console-hardware {
+      background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.8), inset 0 2px 4px rgba(255,255,255,0.1), inset 0 -2px 4px rgba(0,0,0,0.5);
+      border: 3px solid #334155;
+    }
+    ::-webkit-scrollbar { width: 5px; height: 5px; }
+    ::-webkit-scrollbar-track { background: #0f172a; }
+    ::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
+  
+    /* スマホ縦画面：メータースイッチの補助表示を下段に固定 */
+    @media (orientation: portrait) and (max-width: 767px) {
+      #consoleWrapper .meter-buttons-panel button {
+        flex-direction: column !important;
+        align-items: center !important;
+        justify-content: center !important;
+      }
+
+      #consoleWrapper .meter-buttons-panel button > div {
+        flex-direction: row !important;
+        align-items: center !important;
+        justify-content: center !important;
+      }
+
+      #consoleWrapper .meter-buttons-panel button > span {
+        margin-top: 0.25rem !important;
+        margin-left: 0 !important;
+      }
+    }
+
+    /* スマホ横画面：メーター金額の右側に3ボタンを縦配置 */
+    @media (orientation: landscape) and (max-width: 767px) {
+      html, body {
+        min-height: 100%;
+      }
+
+      body {
+        overflow-x: hidden;
+      }
+
+      header {
+        padding-top: 0.35rem !important;
+        padding-bottom: 0.35rem !important;
+      }
+
+      main {
+        padding-top: 0.35rem !important;
+        padding-bottom: 0.35rem !important;
+      }
+
+      #consoleWrapper {
+        padding: 0.45rem !important;
+        border-radius: 0.75rem !important;
+      }
+
+      #consoleWrapper > .meter-console-layout {
+        flex-direction: row !important;
+        gap: 0.45rem !important;
+        align-items: stretch !important;
+      }
+
+      #consoleWrapper > .meter-console-layout > .flex-1 {
+        min-width: 0;
+      }
+
+      #consoleWrapper .meter-buttons-panel {
+        width: 5.6rem !important;
+        min-width: 5.6rem !important;
+        gap: 0.3rem !important;
+      }
+
+      #consoleWrapper .meter-buttons-panel > div:first-child {
+        display: none;
+      }
+
+      #consoleWrapper .meter-buttons-panel > .grid {
+        display: flex !important;
+        flex-direction: column !important;
+        grid-template-columns: none !important;
+        gap: 0.3rem !important;
+        height: 100%;
+      }
+
+      #consoleWrapper .meter-buttons-panel button {
+        flex: 1 1 0 !important;
+        min-height: 0 !important;
+        padding: 0.25rem 0.35rem !important;
+        border-radius: 0.6rem !important;
+      }
+
+      #consoleWrapper .meter-buttons-panel button > div {
+        flex-direction: column !important;
+        gap: 0.1rem !important;
+      }
+
+      #consoleWrapper .meter-buttons-panel button span {
+        font-size: 0.65rem !important;
+        line-height: 1 !important;
+      }
+
+      #consoleWrapper .meter-buttons-panel button > span {
+        margin-top: 0.1rem !important;
+        font-size: 0.5rem !important;
+      }
+
+      #consoleWrapper .meter-buttons-panel button i {
+        font-size: 0.7rem !important;
+      }
+
+      #consoleWrapper .meter-buttons-panel button.md\:flex-row {
+        flex-direction: column !important;
+      }
+
+      #consoleWrapper .bg-black\/90 {
+        padding: 0.25rem !important;
+        margin-bottom: 0.25rem !important;
+      }
+
+      #fareDisplay {
+        font-size: clamp(2.1rem, 11vw, 3.6rem) !important;
+        line-height: 1 !important;
+      }
+
+      #consoleWrapper .grid.grid-cols-3 {
+        gap: 0.25rem !important;
+      }
+
+      #consoleWrapper .grid.grid-cols-3 > div {
+        padding: 0.2rem !important;
+      }
+
+      #consoleWrapper .grid.grid-cols-3 .text-sm {
+        font-size: 0.8rem !important;
+      }
+
+      #consoleWrapper .grid.grid-cols-3 .text-lg {
+        font-size: 0.95rem !important;
+      }
+
+      #consoleWrapper .grid.grid-cols-3 .text-\[9px\] {
+        font-size: 0.45rem !important;
+      }
+
+      /* 横画面：精算・事前確定運賃モーダルを左右に広げて1画面に収める */
+      #settlementModal {
+        padding: 0.75rem !important;
+      }
+
+      #settlementModal > div {
+        width: 94vw !important;
+        max-width: 980px !important;
+        height: auto !important;
+        max-height: calc(100vh - 12px) !important;
+        padding: 0.65rem !important;
+        overflow: hidden !important;
+        gap: 0.35rem !important;
+      }
+
+      #settlementModal > div > div:first-child {
+        padding-bottom: 0.35rem !important;
+      }
+
+      #settlementModal > div > div:nth-child(2) {
+        margin: 0 !important;
+      }
+
+      #settlementModal > div > div:nth-child(2) > div {
+        min-height: 0 !important;
+      }
+
+      #settlementModal .bg-slate-950.p-3 {
+        padding: 0.5rem !important;
+      }
+
+      #settlementModal .space-y-3 > div + div {
+        margin-top: 0.35rem !important;
+      }
+
+      #settlementModal label {
+        margin-bottom: 0.2rem !important;
+        font-size: 0.65rem !important;
+      }
+
+      #settlementModal #modalFixedFareInput {
+        padding-top: 0.35rem !important;
+        padding-bottom: 0.35rem !important;
+        font-size: 1.05rem !important;
+      }
+
+      #settlementModal > div > div:nth-child(2) {
+        display: grid !important;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) !important;
+        gap: 0.75rem !important;
+        align-items: start !important;
+      }
+
+      #settlementModal > div > div:nth-child(2) > div:first-child {
+        min-width: 0;
+      }
+
+      #settlementModal > div > div:nth-child(2) > div:last-child {
+        min-width: 0;
+      }
+
+      #settlementModal #fareKeypad {
+        margin-top: 0.25rem !important;
+        gap: 0.2rem !important;
+      }
+
+      #settlementModal #fareKeypad button {
+        padding-top: 0.35rem !important;
+        padding-bottom: 0.35rem !important;
+        min-height: 0 !important;
+      }
+
+      #settlementModal > div > div:last-child {
+        padding-top: 0.2rem !important;
+      }
+
+      #settlementModal > div > div:last-child button {
+        padding-top: 0.45rem !important;
+        padding-bottom: 0.45rem !important;
+      }
+
+      /* 横画面では下の説明を折りたたみ、メーター本体を1画面に収める */
+      main > .bg-slate-900\/90:last-child {
+        display: none !important;
+      }
+
+      footer {
+        display: none !important;
+      }
+    }
+
+</style>
+</head>
+<body class="min-h-screen flex flex-col justify-between select-none overflow-x-hidden">
+
+  <header class="bg-slate-900/90 backdrop-blur border-b border-slate-800 px-4 py-2.5 sticky top-0 z-50">
+    <div class="max-w-4xl mx-auto flex justify-between items-center">
+      <div class="flex items-center space-x-2">
+        <div class="bg-amber-500 text-slate-950 font-bold px-2.5 py-1 rounded-md text-xs shadow flex items-center space-x-1">
+          <i class="fa-solid fa-taxi"></i><span>TAXIMETER PRO (埼玉)</span>
+        </div>
+        <span id="modeIndicatorTag" class="text-[10px] bg-slate-800 text-slate-300 px-2 py-0.5 rounded border border-slate-700 font-mono">埼玉県特化モード</span>
+      </div>
+      <div class="flex items-center space-x-2">
+        <button onclick="toggleNightOverride()" id="nightOverrideBtn" class="bg-slate-800 hover:bg-slate-700 text-slate-300 px-2.5 py-1 rounded-lg text-xs font-medium border border-slate-700 transition flex items-center space-x-1">
+          <i class="fa-solid fa-moon text-cyan-400"></i><span id="nightOverrideLabel">深夜割増: 自動</span>
+        </button>
+        <button onclick="openHistoryModal()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 px-2.5 py-1 rounded-lg text-xs font-medium border border-slate-700 transition flex items-center space-x-1">
+          <i class="fa-solid fa-history"></i><span>履歴</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="flex-1 max-w-4xl w-full mx-auto p-3 sm:p-4 flex flex-col justify-center">
+
+    <div id="consoleWrapper" class="console-hardware rounded-2xl p-4 sm:p-6 transition-all duration-300">
+      
+      <div class="flex flex-wrap justify-between items-center mb-3 pb-2 border-b border-slate-700/60 text-xs">
+        <div class="flex items-center space-x-3">
+          <span id="hardwareStatusBadge" class="px-3 py-1 rounded font-bold tracking-wider bg-slate-800 text-slate-400 border border-slate-700">
+            空車 (VACANT)
+          </span>
+          <span id="surchargeBadge" class="hidden px-2 py-0.5 rounded font-bold text-[10px] bg-indigo-950 text-indigo-300 border border-indigo-700 animate-pulse">
+            <i class="fa-solid fa-moon"></i> 深夜早朝割増 (距離・時間短縮方式)
+          </span>
+        </div>
+        <div class="text-slate-400 font-mono text-[11px] flex items-center space-x-2">
+          <span><i class="fa-solid fa-clock"></i> <span id="clockDisplay">00:00:00</span></span>
+          <span class="text-cyan-400 font-bold" id="tariffTag">埼玉県標準 (1.027km/¥500)</span>
+        </div>
+      </div>
+
+      <!-- Landscape side-by-side console container -->
+      <div class="meter-console-layout flex flex-col md:flex-row gap-4 items-stretch">
+        
+        <!-- Meter Display Box -->
+        <div class="flex-1 bg-slate-950 border-2 border-cyan-500/40 rounded-xl p-3 sm:p-4 shadow-[inset_0_0_20px_rgba(0,0,0,0.8)] relative overflow-hidden flex flex-col justify-between">
+          <div class="absolute inset-0 bg-[linear-gradient(to_right,#0284c70d_1px,transparent_1px),linear-gradient(to_bottom,#0284c70d_1px,transparent_1px)] bg-[size:12px_12px] pointer-events-none"></div>
+          
+          <div>
+            <div class="flex justify-between items-center mb-1 text-[11px] font-mono text-cyan-400/80">
+              <span><i class="fa-solid fa-yen-sign"></i> 運賃表示器 (FARE)</span>
+              <span id="dispatchFeeTag" class="text-[10px] text-amber-400 hidden">迎車料金 ¥500</span>
+            </div>
+
+            <div class="bg-black/90 border border-cyan-500/30 rounded-lg p-2 sm:p-3 mb-2 text-right shadow-inner">
+              <div id="fareDisplay" class="font-digital text-4xl sm:text-6xl font-extrabold text-cyan-400 digital-glow tracking-tight">¥0</div>
+              <div id="meterProgressInfo" class="mt-1 text-[10px] sm:text-xs font-mono text-amber-300 text-center">初乗り残り --:--</div>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-3 gap-2 text-center mt-1">
+            <div class="bg-slate-900/90 border border-slate-800 rounded-lg p-1.5 sm:p-2">
+              <div class="text-[9px] uppercase text-slate-400">走行距離</div>
+              <div id="distanceDisplay" class="font-digital text-sm sm:text-lg font-bold text-slate-100 mt-0.5">0.00</div>
+              <div class="text-[9px] text-slate-500">km</div>
+            </div>
+            <div class="bg-slate-900/90 border border-slate-800 rounded-lg p-1.5 sm:p-2">
+              <div class="text-[9px] uppercase text-slate-400">経過時間</div>
+              <div id="timeDisplay" class="font-digital text-sm sm:text-lg font-bold text-slate-100 mt-0.5">00:00</div>
+              <div class="text-[9px] text-slate-500">mm:ss</div>
+            </div>
+            <div class="bg-slate-900/90 border border-slate-800 rounded-lg p-1.5 sm:p-2">
+              <div class="text-[9px] uppercase text-slate-400">速度</div>
+              <div id="speedDisplay" class="font-digital text-sm sm:text-lg font-bold text-slate-100 mt-0.5">0.0</div>
+              <div class="text-[9px] text-slate-500">km/h</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Meter Buttons Console (Vertical stack in landscape to mirror physical console) -->
+        <div class="meter-buttons-panel w-full md:w-56 flex flex-col justify-between space-y-2">
+          <div class="text-xs font-bold text-slate-400 px-1 flex justify-between items-center">
+            <span><i class="fa-solid fa-sliders text-amber-400"></i> メータースイッチ</span>
+          </div>
+
+          <div class="grid grid-cols-3 md:grid-cols-1 gap-2 flex-1">
+            <button onclick="setStatus('ENGAGED')" id="btnEngage" class="group relative bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-500 hover:to-amber-600 text-slate-950 font-bold py-2.5 sm:py-3 px-3 rounded-xl shadow-md active:scale-95 transition flex flex-col md:flex-row items-center justify-center md:justify-between border border-amber-400/40">
+              <div class="flex items-center space-x-1.5 text-white">
+                <i class="fa-solid fa-car-side text-amber-300 text-sm"></i>
+                <span class="text-xs sm:text-sm font-extrabold tracking-wider">迎車</span>
+              </div>
+              <span class="text-[9px] bg-black/40 text-amber-200 px-1.5 py-0.5 rounded font-mono mt-1 md:mt-0">+¥500</span>
+            </button>
+
+            <button onclick="setStatus('OCCUPIED')" id="btnOccupied" class="group relative bg-gradient-to-r from-red-600 to-red-700 hover:from-red-500 hover:to-red-600 text-white font-bold py-2.5 sm:py-3 px-3 rounded-xl shadow-md active:scale-95 transition flex flex-col md:flex-row items-center justify-center md:justify-between border border-red-500/40">
+              <div class="flex items-center space-x-1.5">
+                <i class="fa-solid fa-user-check text-red-200 text-sm"></i>
+                <span class="text-xs sm:text-sm font-extrabold tracking-wider">実車</span>
+              </div>
+              <span class="text-[9px] bg-black/40 text-red-200 px-1.5 py-0.5 rounded font-mono mt-1 md:mt-0">初乗り</span>
+            </button>
+
+            <button onclick="setStatus('VACANT')" id="btnVacant" class="group relative bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-500 hover:to-emerald-600 text-white font-bold py-2.5 sm:py-3 px-3 rounded-xl shadow-md active:scale-95 transition flex flex-col md:flex-row items-center justify-center md:justify-between border border-emerald-500/40">
+              <div class="flex items-center space-x-1.5">
+                <i class="fa-solid fa-circle-dot text-emerald-200 text-sm"></i>
+                <span class="text-xs sm:text-sm font-extrabold tracking-wider">空車</span>
+              </div>
+              <span class="text-[9px] bg-black/40 text-emerald-200 px-1.5 py-0.5 rounded font-mono mt-1 md:mt-0">精算保存</span>
+            </button>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+
+    <!-- GPS & Simulation Controls -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mt-3">
+      <div class="flex justify-between items-center text-slate-400">
+        <span class="flex items-center space-x-1.5">
+          <i class="fa-solid fa-route text-cyan-400"></i>
+          <span class="font-bold text-slate-300">OSRMルート検索 & GPS状態</span>
+        </span>
+        <div class="flex items-center space-x-2">
+          <button onclick="toggleSimMode()" id="simToggleBtn" class="text-[10px] bg-slate-800 hover:bg-slate-700 text-cyan-400 px-2 py-0.5 rounded border border-slate-700 transition">
+            シミュレータ切替
+          </button>
+          <span id="gpsStatusBadge" class="text-amber-400 bg-amber-950/50 px-2 py-0.5 rounded-full border border-amber-800/50">待機中</span>
+        </div>
+      </div>
+      <div id="addressDisplay" class="text-slate-300 font-mono truncate bg-slate-950/60 p-2 rounded border border-slate-800">
+        GPS信号をスキャン中... (発着地点住所の自動逆引き対応)
+      </div>
+    </div>
+
+    <details class="bg-slate-900/90 border border-slate-800 rounded-xl shadow-sm mt-3 group">
+      <summary class="list-none cursor-pointer select-none p-3.5 flex items-center justify-between text-cyan-400 font-bold text-xs">
+        <span class="flex items-center space-x-2">
+          <i class="fa-solid fa-circle-info"></i>
+          <span>スマート精算システム案内 (埼玉県タクシー運賃仕様)</span>
+        </span>
+        <i class="fa-solid fa-chevron-down text-slate-500 transition-transform duration-200 group-open:rotate-180"></i>
+      </summary>
+      <div class="px-3.5 pb-3.5 text-[11px] text-slate-400 leading-relaxed">
+        「空車」ボタンを押すと精算・ライドシェア事前確定運賃の入力モーダルが起動します。埼玉県基準（初乗り1.027km/¥500、加算213m毎/¥100、時間80秒毎/¥100）および深夜自動短縮方式に対応しています。
+      </div>
+    </details>
+
+  </main>
+
+  <footer class="bg-slate-900/60 border-t border-slate-800/80 py-2.5 text-center text-[10px] text-slate-500">
+    Soft Meter GPS Engine • Saitama Tariff OSRM Routing + Time-Fare Integration Engine
+  </footer>
+
+  <!-- Settlement Modal -->
+  <div id="settlementModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-cyan-500/50 rounded-2xl max-w-sm w-full p-5 shadow-2xl space-y-4 animate-in fade-in duration-200">
+      <div class="flex justify-between items-center border-b border-slate-800 pb-3">
+        <h4 class="font-bold text-sm text-cyan-400 flex items-center space-x-2">
+          <i class="fa-solid fa-file-invoice-dollar"></i><span>精算・ライドシェア比較保存</span>
+        </h4>
+        <button onclick="closeSettlementModal()" class="text-slate-400 hover:text-slate-200 p-1">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+      <div class="space-y-3 text-xs text-slate-300">
+        <div class="bg-slate-950 p-3 rounded-lg border border-slate-800 space-y-1">
+          <div class="flex justify-between"><span class="text-slate-400">確定メーター運賃:</span><span id="settleFareText" class="font-digital font-bold text-cyan-400 text-base">¥0</span></div>
+          <div class="flex justify-between"><span class="text-slate-400">走行ルート距離 / 時間:</span><span id="settleMetaText" class="font-mono">0.00km / 00:00</span></div>
+          <div class="pt-1 text-[11px] text-slate-400 border-t border-slate-800/60 truncate"><span class="text-emerald-400 font-bold">発:</span> <span id="settleStartAddr">未測定</span></div>
+          <div class="text-[11px] text-slate-400 truncate"><span class="text-amber-400 font-bold">着:</span> <span id="settleEndAddr">未測定</span></div>
+        </div>
+        <div>
+          <label class="block font-semibold mb-1 text-slate-300">ライドシェア事前確定運賃を入力 (必須):</label>
+          <div class="relative">
+            <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400 font-bold">¥</span>
+            <input type="text" id="modalFixedFareInput" inputmode="none" readonly autocomplete="off" placeholder="例: 3500" class="w-full bg-slate-950 border border-cyan-600/50 rounded-lg py-2 pl-8 pr-3 text-slate-100 font-digital text-lg focus:outline-none focus:border-cyan-400 cursor-default" onclick="openFareKeypad()">
+          </div>
+
+          <!-- スマホの標準テンキーを使わず、モーダル内の専用テンキーで入力 -->
+          <div id="fareKeypad" class="mt-2 grid grid-cols-3 gap-1.5">
+            <button type="button" onclick="fareKeypadPress('1')" class="bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-100 font-bold py-2.5 rounded-lg border border-slate-700">1</button>
+            <button type="button" onclick="fareKeypadPress('2')" class="bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-100 font-bold py-2.5 rounded-lg border border-slate-700">2</button>
+            <button type="button" onclick="fareKeypadPress('3')" class="bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-100 font-bold py-2.5 rounded-lg border border-slate-700">3</button>
+            <button type="button" onclick="fareKeypadPress('4')" class="bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-100 font-bold py-2.5 rounded-lg border border-slate-700">4</button>
+            <button type="button" onclick="fareKeypadPress('5')" class="bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-100 font-bold py-2.5 rounded-lg border border-slate-700">5</button>
+            <button type="button" onclick="fareKeypadPress('6')" class="bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-100 font-bold py-2.5 rounded-lg border border-slate-700">6</button>
+            <button type="button" onclick="fareKeypadPress('7')" class="bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-100 font-bold py-2.5 rounded-lg border border-slate-700">7</button>
+            <button type="button" onclick="fareKeypadPress('8')" class="bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-100 font-bold py-2.5 rounded-lg border border-slate-700">8</button>
+            <button type="button" onclick="fareKeypadPress('9')" class="bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-100 font-bold py-2.5 rounded-lg border border-slate-700">9</button>
+            <button type="button" onclick="fareKeypadClear()" class="bg-slate-700 hover:bg-slate-600 active:scale-95 text-amber-300 font-bold py-2.5 rounded-lg border border-slate-600 text-xs">クリア</button>
+            <button type="button" onclick="fareKeypadPress('0')" class="bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-100 font-bold py-2.5 rounded-lg border border-slate-700">0</button>
+            <button type="button" onclick="fareKeypadBackspace()" class="bg-slate-700 hover:bg-slate-600 active:scale-95 text-cyan-300 font-bold py-2.5 rounded-lg border border-slate-600"><i class="fa-solid fa-delete-left"></i></button>
+          </div>
+        </div>
+      </div>
+      <div class="flex space-x-2 pt-2">
+        <button onclick="saveRideWithFixedFare()" class="flex-1 bg-cyan-600 hover:bg-cyan-500 text-slate-950 font-bold py-2.5 rounded-xl text-xs transition shadow">
+          保存して空車にする
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- History Modal -->
+  <div id="historyModal" class="fixed inset-0 bg-black/75 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-lg w-full max-h-[85vh] flex flex-col shadow-2xl overflow-hidden">
+      <div class="p-4 border-b border-slate-800 flex justify-between items-center bg-slate-950">
+        <h3 class="font-bold text-sm text-slate-200 flex items-center space-x-2">
+          <i class="fa-solid fa-clipboard-list text-cyan-400"></i><span>走行・実車記録履歴 & 収支集計</span>
+        </h3>
+        <button onclick="closeHistoryModal()" class="text-slate-400 hover:text-slate-200 p-1 rounded-lg">
+          <i class="fa-solid fa-xmark text-lg"></i>
+        </button>
+      </div>
+      
+      <!-- Summary Header inside History Modal -->
+      <div id="historySummaryBox" class="bg-slate-950/80 px-4 py-3 border-b border-slate-800 flex justify-around items-center text-center">
+        <div>
+          <div class="text-[10px] text-slate-400 uppercase">累計メーター運賃</div>
+          <div id="sumTotalFare" class="font-digital text-cyan-400 font-bold text-sm sm:text-base">¥0</div>
+        </div>
+        <div class="border-r border-slate-800 h-8"></div>
+        <div>
+          <div class="text-[10px] text-slate-400 uppercase">累計事前確定運賃</div>
+          <div id="sumTotalFixed" class="font-digital text-amber-400 font-bold text-sm sm:text-base">¥0</div>
+        </div>
+        <div class="border-r border-slate-800 h-8"></div>
+        <div>
+          <div class="text-[10px] text-slate-400 uppercase">総合差額 (確定-ﾒｰﾀｰ)</div>
+          <div id="sumTotalDiff" class="font-digital text-emerald-400 font-bold text-sm sm:text-base">¥0</div>
+        </div>
+      </div>
+
+      <div id="todaySummaryBox" class="bg-slate-950/60 px-4 py-3 border-b border-slate-800"></div>
+
+      <div id="historyListContainer" class="p-4 overflow-y-auto flex-1 space-y-3 divide-y divide-slate-800/50"></div>
+      <div class="p-4 border-t border-slate-800 bg-slate-950 flex justify-between items-center">
+        <button onclick="clearHistory()" class="text-xs text-red-400 hover:text-red-300 flex items-center space-x-1 py-1 px-2 rounded hover:bg-red-950/30 transition">
+          <i class="fa-solid fa-trash-can"></i><span>全履歴を削除</span>
+        </button>
+        <button onclick="closeHistoryModal()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs px-4 py-2 rounded-lg font-medium transition">
+          閉じる
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Map Modal -->
+  <div id="mapModal" class="fixed inset-0 bg-black/85 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-cyan-500/50 rounded-2xl max-w-xl w-full flex flex-col shadow-2xl overflow-hidden">
+      <div class="p-4 border-b border-slate-800 flex justify-between items-center bg-slate-950">
+        <h3 class="font-bold text-sm text-cyan-400 flex items-center space-x-2">
+          <i class="fa-solid fa-map-location-dot"></i><span>走行ルート・位置マップビュー</span>
+        </h3>
+        <button onclick="closeMapModal()" class="text-slate-400 hover:text-slate-200 p-1">
+          <i class="fa-solid fa-xmark text-lg"></i>
+        </button>
+      </div>
+      <div class="p-4 space-y-3">
+        <div class="bg-slate-950 p-3 rounded-lg border border-slate-800 text-xs space-y-1 font-mono">
+          <div class="text-emerald-400 truncate"><span class="font-bold text-slate-400">出発地:</span> <span id="mapStartAddrText">-</span></div>
+          <div class="text-amber-400 truncate"><span class="font-bold text-slate-400">到着地:</span> <span id="mapEndAddrText">-</span></div>
+          <div id="mapRouteDetails" class="grid grid-cols-2 gap-x-3 gap-y-1 pt-2 mt-2 border-t border-slate-800/70 text-[10px] text-slate-400"></div>
+        </div>
+        <div class="w-full h-72 sm:h-80 rounded-xl overflow-hidden border border-slate-800 relative bg-slate-950">
+          <div id="routeMap" class="w-full h-full"></div>
+        </div>
+      </div>
+      <div class="p-3 border-t border-slate-800 bg-slate-950 flex justify-end">
+        <button onclick="closeMapModal()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs px-4 py-2 rounded-lg font-medium transition">
+          閉じる
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Custom Alert Modal -->
+  <div id="customModal" class="fixed inset-0 bg-black/75 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-xs w-full p-5 text-center shadow-2xl space-y-4">
+      <div id="modalIcon" class="w-12 h-12 rounded-full bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center mx-auto text-cyan-400 text-xl">
+        <i class="fa-solid fa-info"></i>
+      </div>
+      <div>
+        <h4 id="modalTitle" class="font-bold text-sm text-slate-200 mb-1">通知</h4>
+        <p id="modalMessage" class="text-xs text-slate-400 leading-relaxed">メッセージが入ります</p>
+      </div>
+      <button onclick="closeCustomModal()" class="w-full bg-cyan-600 hover:bg-cyan-500 text-slate-950 font-bold py-2 rounded-xl text-xs transition shadow">
+        確認
+      </button>
+    </div>
+  </div>
+
+  <script>
+    let appState = 'VACANT';
+    let currentFare = 0;
+    let totalDistance = 0;
+    let accumulatedSeconds = 0;
+    let timerInterval = null;
+    let clockInterval = null;
+    let watchId = null;
+    let lastPosition = null;
+    let startTime = null;
+    let speedKmh = 0;
+    let rideLogs = [];
+    let isDispatchApplied = false;
+    let isOccupiedStarted = false;
+    let nightOverrideMode = 'AUTO';
+    let isSimulationMode = false;
+    let simInterval = null;
+    let isRoutingFetching = false;
+    let timeFareAdded = 0;
+    // 初乗り1.027kmを「距離＋低速時間」で消化するためのメーター進行距離
+    // 低速時は10km/h換算で時間を距離に置き換え、80秒ごとに100円ではなく
+    // 初乗り分を消化してから213m相当ごとに100円加算する。
+    let meterProgressDistance = 0;
+    let lastRoutedPosition = null;
+    let latestGPSPosition = null;
+    let routePoints = [];
+    // 運行フェーズ別の記録
+    let engageStartAt = null;
+    let occupiedStartAt = null;
+    let dropoffAt = null;
+    let pickupDistance = 0;
+    let routeMap = null;
+    let routePolyline = null;
+    let routePolylineBlue = null;
+    let routePolylineRed = null;
+    let routeStartMarker = null;
+    let routeEndMarker = null;
+    let routeOccupiedMarker = null;
+    let isFinalizingSettlement = false;
+    let lastGPSAcceptedTimestamp = 0;
+    const MAX_GPS_ACCURACY_METERS = 50;
+    const MAX_GPS_SPEED_KMH = 180;
+
+    let startLocation = { lat: 35.8617, lng: 139.6455, address: '埼玉県さいたま市 (未測位)' };
+    let endLocation = { lat: 35.8033, lng: 139.7133, address: '埼玉県川口市 (未測位)' };
+
+    // Saitama Prefecture Taxi Tariff Specifications
+    const BASE_FARE = 500;
+    const BASE_DISTANCE = 1.027; // km
+    const DISTANCE_UNIT = 0.213; // km (213m per ¥100)
+    const DISTANCE_FARE_UNIT = 100;
+    const TIME_UNIT_SEC = 80;    // 80 seconds per ¥100 under low speed
+    const LOW_SPEED_THRESHOLD = 10;
+    const DISPATCH_FEE = 500;
+
+    window.onload = function() {
+      const saved = localStorage.getItem('taxi_ride_logs_pro_saitama');
+      if (saved) {
+        try { rideLogs = JSON.parse(saved); } catch(e) { rideLogs = []; }
+      }
+
+      // ルート座標は最新100件だけ保持する。
+      // 売上・運賃・距離・時間などの履歴本体は100件を超えても残す。
+      trimOldRouteHistory();
+      
+      updateClock();
+      clockInterval = setInterval(updateClock, 1000);
+      updateDisplay();
+      
+      checkOrientation();
+      window.addEventListener('resize', checkOrientation);
+    };
+
+    function checkOrientation() {
+      const isLandscape = window.innerWidth > window.innerHeight;
+      const consoleWrapper = document.getElementById('consoleWrapper');
+      if (isLandscape && window.innerWidth >= 768) {
+        consoleWrapper.classList.add('ring-1', 'ring-cyan-500/30');
+      } else {
+        consoleWrapper.classList.remove('ring-1', 'ring-cyan-500/30');
+      }
+    }
+
+    function updateClock() {
+      const now = new Date();
+      document.getElementById('clockDisplay').innerText = now.toTimeString().split(' ')[0];
+      if (nightOverrideMode === 'AUTO') {
+        const hour = now.getHours();
+        updateNightSurchargeVisual(hour >= 22 || hour < 5);
+      }
+    }
+
+    function toggleNightOverride() {
+      if (nightOverrideMode === 'AUTO') {
+        nightOverrideMode = 'ON';
+        document.getElementById('nightOverrideLabel').innerText = "深夜割増: 強制ON";
+        updateNightSurchargeVisual(true);
+      } else if (nightOverrideMode === 'ON') {
+        nightOverrideMode = 'OFF';
+        document.getElementById('nightOverrideLabel').innerText = "深夜割増: 強制OFF";
+        updateNightSurchargeVisual(false);
+      } else {
+        nightOverrideMode = 'AUTO';
+        document.getElementById('nightOverrideLabel').innerText = "深夜割増: 自動";
+        const hour = new Date().getHours();
+        updateNightSurchargeVisual(hour >= 22 || hour < 5);
+      }
+      recalculateMeter();
+    }
+
+    function isNightActive() {
+      if (nightOverrideMode === 'ON') return true;
+      if (nightOverrideMode === 'OFF') return false;
+      const hour = new Date().getHours();
+      return (hour >= 22 || hour < 5);
+    }
+
+    function updateNightSurchargeVisual(active) {
+      const badge = document.getElementById('surchargeBadge');
+      if (active) {
+        badge.classList.remove('hidden');
+      } else {
+        badge.classList.add('hidden');
+      }
+    }
+
+    function toggleSimMode() {
+      isSimulationMode = !isSimulationMode;
+      const btn = document.getElementById('simToggleBtn');
+      const isRunning = appState !== 'VACANT';
+
+      if (isSimulationMode) {
+        btn.innerText = "GPSモードへ切替";
+        btn.className = "text-[10px] bg-amber-900/50 hover:bg-amber-800 text-amber-300 px-2 py-0.5 rounded border border-amber-700 transition";
+        document.getElementById('addressDisplay').innerText = "シミュレーションモード稼働中 (自動加算)";
+        document.getElementById('gpsStatusBadge').innerText = "シミュ";
+        document.getElementById('gpsStatusBadge').className = "text-amber-400 bg-amber-950/50 px-2 py-0.5 rounded-full border border-amber-800/50";
+
+        // GPS監視とシミュレーションを同時に動かさない
+        if (watchId !== null && navigator.geolocation) {
+          navigator.geolocation.clearWatch(watchId);
+          watchId = null;
+        }
+        if (isRunning) startSimulation();
+      } else {
+        btn.innerText = "シミュレータ切替";
+        btn.className = "text-[10px] bg-slate-800 hover:bg-slate-700 text-cyan-400 px-2 py-0.5 rounded border border-slate-700 transition";
+        if (simInterval !== null) {
+          clearInterval(simInterval);
+          simInterval = null;
+        }
+        if (isRunning) startGPSWatch();
+      }
+    }
+
+    function showModal(title, message, type = 'info') {
+      document.getElementById('modalTitle').innerText = title;
+      document.getElementById('modalMessage').innerText = message;
+      const iconDiv = document.getElementById('modalIcon');
+      if (type === 'success') {
+        iconDiv.className = 'w-12 h-12 rounded-full bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center mx-auto text-emerald-400 text-xl';
+        iconDiv.innerHTML = '<i class="fa-solid fa-check"></i>';
+      } else {
+        iconDiv.className = 'w-12 h-12 rounded-full bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center mx-auto text-cyan-400 text-xl';
+        iconDiv.innerHTML = '<i class="fa-solid fa-info"></i>';
+      }
+      document.getElementById('customModal').classList.remove('hidden');
+    }
+
+    function closeCustomModal() {
+      document.getElementById('customModal').classList.add('hidden');
+    }
+
+    // 保存完了メッセージは数秒だけ表示して、自動的にメーター画面へ戻す。
+    function showSaveCompleteModal(title, message, duration = 1800) {
+      showModal(title, message, 'success');
+      setTimeout(() => {
+        closeCustomModal();
+      }, duration);
+    }
+
+    async function reverseGeocode(lat, lng) {
+      try {
+        const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=16&addressdetails=1`, {
+          headers: { 'User-Agent': 'SoftTaxiMeterProSaitama/2.0' }
+        });
+        const data = await response.json();
+        if (data && data.display_name) {
+          const parts = data.display_name.split(',');
+          if (parts.length >= 3) {
+            return `${parts[1].trim()} ${parts[0].trim()}`;
+          }
+          return data.display_name;
+        }
+      } catch (e) {}
+      return `緯度:${lat.toFixed(4)}, 経度:${lng.toFixed(4)}`;
+    }
+
+    function setStatus(newState) {
+      if (appState === newState) return;
+
+      // 着地GPS取得中は二重押しを受け付けない
+      if (isFinalizingSettlement) return;
+
+      if (newState === 'VACANT' && (appState === 'OCCUPIED' || appState === 'ENGAGED')) {
+        finalizeAndOpenSettlement();
+        return;
+      }
+
+      executeSetStatus(newState);
+    }
+
+    async function finalizeAndOpenSettlement() {
+      // GPS取得が終わるまで空車ボタンをロックして、二重押しを防止
+      if (isFinalizingSettlement) return;
+      isFinalizingSettlement = true;
+      // 「降車時間」は空車（精算）ボタンを押した瞬間を記録
+      dropoffAt = new Date().toISOString();
+
+      const vacantBtn = document.getElementById('btnVacant');
+      const originalVacantHtml = vacantBtn ? vacantBtn.innerHTML : '';
+      if (vacantBtn) {
+        vacantBtn.disabled = true;
+        vacantBtn.classList.add('cursor-wait', 'opacity-80');
+        vacantBtn.innerHTML = '<div class=\"flex items-center justify-center gap-2 w-full\"><i class=\"fa-solid fa-spinner fa-spin\"></i><span>GPS取得中...</span></div>';
+      }
+
+      const setEndPosition = async (lat, lng) => {
+        lastPosition = { lat, lng };
+        latestGPSPosition = { lat, lng };
+        endLocation.lat = lat;
+        endLocation.lng = lng;
+        endLocation.address = await reverseGeocode(lat, lng);
+      };
+
+      // 精算ボタンを押した瞬間のGPSを取得して、着地点を最新化する
+      if (navigator.geolocation) {
+        document.getElementById('gpsStatusBadge').innerText = "着地GPS取得中...";
+        try {
+          const position = await new Promise((resolve, reject) => {
+            navigator.geolocation.getCurrentPosition(resolve, reject, {
+              enableHighAccuracy: true,
+              maximumAge: 0,
+              timeout: 5000
+            });
+          });
+          await setEndPosition(position.coords.latitude, position.coords.longitude);
+        } catch (e) {
+          if (lastPosition) {
+            await setEndPosition(lastPosition.lat, lastPosition.lng);
+          }
+        }
+      } else if (lastPosition) {
+        await setEndPosition(lastPosition.lat, lastPosition.lng);
+      }
+
+      // 最後のGPS点を履歴軌跡に追加
+      if (Number.isFinite(endLocation.lat) && Number.isFinite(endLocation.lng)) {
+        addRoutePoint(endLocation.lat, endLocation.lng, true);
+      }
+
+      openSettlementModal();
+
+      // モーダル表示後も、確定処理が終わるまでは二重操作を受け付けない
+      if (vacantBtn) {
+        vacantBtn.disabled = false;
+        vacantBtn.classList.remove('cursor-wait', 'opacity-80');
+        vacantBtn.innerHTML = originalVacantHtml;
+      }
+      isFinalizingSettlement = false;
+    }
+
+    function executeSetStatus(newState) {
+      const oldState = appState;
+      appState = newState;
+
+      const banner = document.getElementById('hardwareStatusBadge');
+      const btnEngage = document.getElementById('btnEngage');
+      const btnOccupied = document.getElementById('btnOccupied');
+      const btnVacant = document.getElementById('btnVacant');
+
+      btnEngage.className = "group relative bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-500 hover:to-amber-600 text-slate-950 font-bold py-3 px-4 rounded-xl shadow-md active:scale-95 transition flex items-center justify-between border border-amber-400/40 opacity-70";
+      btnOccupied.className = "group relative bg-gradient-to-r from-red-600 to-red-700 hover:from-red-500 hover:to-red-600 text-white font-bold py-3.5 px-4 rounded-xl shadow-md active:scale-95 transition flex items-center justify-between border border-red-500/40 opacity-70";
+      btnVacant.className = "group relative bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-500 hover:to-emerald-600 text-white font-bold py-3 px-4 rounded-xl shadow-md active:scale-95 transition flex items-center justify-between border border-emerald-500/40 opacity-70";
+
+      if (newState === 'VACANT') {
+        banner.className = "px-3 py-1 rounded font-bold tracking-wider bg-emerald-950 text-emerald-400 border border-emerald-600/50 shadow";
+        banner.innerHTML = "空車 (VACANT)";
+        btnVacant.classList.remove('opacity-70');
+        btnVacant.classList.add('ring-2', 'ring-emerald-400');
+
+        stopMeterSession();
+      } else if (newState === 'ENGAGED') {
+        banner.className = "px-3 py-1 rounded font-bold tracking-wider bg-amber-950 text-amber-400 border border-amber-600/50 shadow";
+        banner.innerHTML = "迎車 (ENGAGED)";
+        btnEngage.classList.remove('opacity-70');
+        btnEngage.classList.add('ring-2', 'ring-amber-400');
+
+        if (oldState === 'VACANT') {
+          isDispatchApplied = true;
+          isOccupiedStarted = false;
+          currentFare = DISPATCH_FEE; // 500 yen dispatch fee only
+          document.getElementById('dispatchFeeTag').classList.remove('hidden');
+          document.getElementById('dispatchFeeTag').innerText = "迎車料金 ¥500";
+          
+          if (lastPosition) {
+            startLocation.lat = lastPosition.lat;
+            startLocation.lng = lastPosition.lng;
+            reverseGeocode(lastPosition.lat, lastPosition.lng).then(addr => { startLocation.address = addr; });
+          }
+          // 迎車中はGPS監視と青ルート記録だけ開始。
+          // メーター距離・時間計算は実車ボタンを押すまで開始しない。
+          engageStartAt = new Date().toISOString();
+          occupiedStartAt = null;
+          dropoffAt = null;
+          pickupDistance = 0;
+          startTime = new Date();
+          routePoints = [];
+          lastRoutedPosition = lastPosition ? { ...lastPosition } : null;
+          if (lastPosition) addRoutePoint(lastPosition.lat, lastPosition.lng, true);
+          startGPSWatch();
+        }
+      } else if (newState === 'OCCUPIED') {
+        banner.className = "px-3 py-1 rounded font-bold tracking-wider bg-red-950 text-red-400 border border-red-600/50 shadow animate-pulse";
+        banner.innerHTML = "実車 (OCCUPIED)";
+        btnOccupied.classList.remove('opacity-70');
+        btnOccupied.classList.add('ring-2', 'ring-red-400');
+
+        if (oldState === 'VACANT') {
+          isDispatchApplied = false;
+          isOccupiedStarted = true;
+          document.getElementById('dispatchFeeTag').classList.add('hidden');
+          currentFare = BASE_FARE; // 500 yen initial fare
+          
+          if (lastPosition) {
+            startLocation.lat = lastPosition.lat;
+            startLocation.lng = lastPosition.lng;
+            reverseGeocode(lastPosition.lat, lastPosition.lng).then(addr => { startLocation.address = addr; });
+          }
+          startMeterSession();
+        } else if (oldState === 'ENGAGED') {
+          // ★実車ボタンを押した瞬間をメーターSTARTにする
+          isOccupiedStarted = true;
+          occupiedStartAt = new Date().toISOString();
+          accumulatedSeconds = 0;
+          totalDistance = 0;
+          meterProgressDistance = 0;
+          timeFareAdded = 0;
+          currentFare = isDispatchApplied ? (DISPATCH_FEE + BASE_FARE) : BASE_FARE;
+          document.getElementById('dispatchFeeTag').innerText = "迎車料金込 ¥1,000";
+          document.getElementById('dispatchFeeTag').classList.remove('hidden');
+
+          // 迎車→実車の境界点。ここから赤ルート＋メーター距離計算開始
+          if (latestGPSPosition) {
+            lastPosition = { ...latestGPSPosition };
+            lastRoutedPosition = { ...latestGPSPosition };
+            addRoutePoint(latestGPSPosition.lat, latestGPSPosition.lng, true);
+          } else if (lastPosition) {
+            lastRoutedPosition = { ...lastPosition };
+            addRoutePoint(lastPosition.lat, lastPosition.lng, true);
+          }
+
+          startOccupiedMeterSession();
+        }
+      }
+    }
+
+    // ライドシェア事前確定運賃用の専用テンキー
+    // inputmode="none" + readonly にして、スマホ標準キーボードを表示させない。
+    function openFareKeypad() {
+      const input = document.getElementById('modalFixedFareInput');
+      if (input) input.blur();
+    }
+
+    function fareKeypadPress(value) {
+      const input = document.getElementById('modalFixedFareInput');
+      if (!input) return;
+
+      let current = String(input.value || '');
+      // 先頭0の連続入力を防止（0だけは許可）
+      if (current === '0') current = '';
+      if (current.length >= 7) return;
+
+      input.value = current + value;
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+    }
+
+    function fareKeypadClear() {
+      const input = document.getElementById('modalFixedFareInput');
+      if (!input) return;
+      input.value = '';
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+    }
+
+    function fareKeypadBackspace() {
+      const input = document.getElementById('modalFixedFareInput');
+      if (!input) return;
+      input.value = String(input.value || '').slice(0, -1);
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+    }
+
+    function openSettlementModal() {
+      document.getElementById('settleFareText').innerText = `¥${currentFare.toLocaleString()}`;
+      const mins = Math.floor(accumulatedSeconds / 60).toString().padStart(2, '0');
+      const secs = (accumulatedSeconds % 60).toString().padStart(2, '0');
+      document.getElementById('settleMetaText').innerText = `${totalDistance.toFixed(2)}km / ${mins}:${secs}`;
+      document.getElementById('settleStartAddr').innerText = startLocation.address;
+      document.getElementById('settleEndAddr').innerText = endLocation.address;
+      
+      // Reset input to 0 or empty so previous value does not persist
+      document.getElementById('modalFixedFareInput').value = '';
+      document.getElementById('settlementModal').classList.remove('hidden');
+      document.getElementById('modalFixedFareInput').blur();
+    }
+
+    function closeSettlementModal() {
+      document.getElementById('settlementModal').classList.add('hidden');
+    }
+
+    function saveRideWithFixedFare() {
+      const modalInput = document.getElementById('modalFixedFareInput').value;
+      const fixedFare = modalInput ? parseFloat(modalInput) : 0;
+      
+      if (fixedFare <= 0) {
+        showModal("入力確認", "ライドシェアの事前確定運賃を入力してください。");
+        return;
+      }
+
+      closeSettlementModal();
+
+      const diff = fixedFare - currentFare;
+      const record = {
+        id: Date.now(),
+        date: new Date().toLocaleString('ja-JP'),
+        fare: currentFare,
+        distance: totalDistance.toFixed(2),
+        timeSec: accumulatedSeconds,
+        isNight: isNightActive(),
+        isDispatch: isDispatchApplied,
+        fixedFare: fixedFare,
+        diff: diff,
+        startAddr: startLocation.address,
+        endAddr: endLocation.address,
+        startLat: startLocation.lat,
+        startLng: startLocation.lng,
+        endLat: endLocation.lat,
+        endLng: endLocation.lng,
+        engageStartAt: engageStartAt,
+        occupiedStartAt: occupiedStartAt,
+        dropoffAt: dropoffAt || new Date().toISOString(),
+        pickupDistance: Number(pickupDistance.toFixed(3)),
+        occupiedDistance: Number(totalDistance.toFixed(3)),
+        totalRouteDistance: Number((pickupDistance + totalDistance).toFixed(3)),
+        pickupSeconds: getElapsedSeconds(engageStartAt, occupiedStartAt),
+        occupiedSeconds: getElapsedSeconds(occupiedStartAt, dropoffAt || new Date().toISOString()),
+        occupiedRate: calculateOccupiedRate(pickupDistance, totalDistance),
+        routePoints: routePoints.map(p => ({ lat: p.lat, lng: p.lng, phase: p.phase }))
+      };
+
+      rideLogs.unshift(record);
+
+      // ルート座標だけは最新100件まで。
+      // 101件目以降の古い履歴は、運賃・距離・時間・住所などを残して
+      // routePoints だけ削除し、LocalStorageの肥大化を防ぐ。
+      trimOldRouteHistory();
+
+      try {
+        localStorage.setItem('taxi_ride_logs_pro_saitama', JSON.stringify(rideLogs));
+      } catch(e) {}
+
+      showSaveCompleteModal("精算・運行データ保存", `運賃: ¥${currentFare.toLocaleString()} (事前確定: ¥${fixedFare.toLocaleString()}) の運行データを記録しました。`);
+      
+      totalDistance = 0;
+      accumulatedSeconds = 0;
+      currentFare = 0;
+      timeFareAdded = 0;
+      meterProgressDistance = 0;
+      lastRoutedPosition = null;
+      latestGPSPosition = null;
+      routePoints = [];
+      startTime = null;
+      engageStartAt = null;
+      occupiedStartAt = null;
+      dropoffAt = null;
+      pickupDistance = 0;
+      isDispatchApplied = false;
+      isOccupiedStarted = false;
+      document.getElementById('dispatchFeeTag').classList.add('hidden');
+      
+      executeSetStatus('VACANT');
+      updateDisplay();
+    }
+
+    function startOccupiedMeterSession() {
+      // 実車開始時専用。迎車中に積算した距離・時間はメーターに持ち込まない。
+      startTime = new Date();
+
+      if (isSimulationMode) {
+        startSimulation();
+      } else {
+        startGPSWatch();
+      }
+
+      if (timerInterval) clearInterval(timerInterval);
+      timerInterval = setInterval(() => {
+        accumulatedSeconds++;
+
+        if (isOccupiedStarted && speedKmh <= LOW_SPEED_THRESHOLD) {
+          const lowSpeedEquivalentKmPerSecond = 10 / 3600;
+          meterProgressDistance += lowSpeedEquivalentKmPerSecond;
+          recalculateMeter();
+        }
+
+        updateDisplay();
+      }, 1000);
+    }
+
+    function startMeterSession() {
+      if (!startTime) {
+        startTime = new Date();
+        timeFareAdded = 0;
+        meterProgressDistance = 0;
+        routePoints = [];
+        if (lastPosition) addRoutePoint(lastPosition.lat, lastPosition.lng, true);
+      }
+      
+      if (isSimulationMode) {
+        startSimulation();
+      } else {
+        startGPSWatch();
+      }
+
+      if (timerInterval) clearInterval(timerInterval);
+      timerInterval = setInterval(() => {
+        accumulatedSeconds++;
+
+        // 時速10km以下では「時間」をメーター進行距離へ換算する。
+        // 10km/h × 80秒 = 約0.222kmなので、80秒経過しただけでは
+        // 初乗り1.027kmを消化せず、いきなり100円は加算しない。
+        if (isOccupiedStarted && speedKmh <= LOW_SPEED_THRESHOLD) {
+          const lowSpeedEquivalentKmPerSecond = 10 / 3600;
+          meterProgressDistance += lowSpeedEquivalentKmPerSecond;
+          recalculateMeter();
+        }
+
+        updateDisplay();
+      }, 1000);
+    }
+
+    function stopMeterSession() {
+      if (watchId !== null && navigator.geolocation) {
+        navigator.geolocation.clearWatch(watchId);
+        watchId = null;
+      }
+      isRoutingFetching = false;
+      lastRoutedPosition = null;
+      latestGPSPosition = null;
+      if (simInterval !== null) {
+        clearInterval(simInterval);
+        simInterval = null;
+      }
+      if (timerInterval !== null) {
+        clearInterval(timerInterval);
+        timerInterval = null;
+      }
+      document.getElementById('gpsStatusBadge').innerText = "停止中";
+      document.getElementById('gpsStatusBadge').className = "text-slate-400 bg-slate-800 px-2 py-0.5 rounded-full border border-slate-700";
+    }
+
+    async function fetchRouteDistance(lat1, lon1, lat2, lon2) {
+      const url = `https://router.project-osrm.org/route/v1/driving/${lon1},${lat1};${lon2},${lat2}?overview=false`;
+      try {
+        const response = await fetch(url);
+        const data = await response.json();
+        if (data.code === 'Ok' && data.routes && data.routes.length > 0) {
+          return data.routes[0].distance / 1000;
+        }
+      } catch (error) {}
+      return calculateHaversineDistance(lat1, lon1, lat2, lon2);
+    }
+
+    function calculateHaversineDistance(lat1, lon1, lat2, lon2) {
+      const R = 6371;
+      const dLat = (lat2 - lat1) * Math.PI / 180;
+      const dLon = (lon2 - lon1) * Math.PI / 180;
+      const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                Math.sin(dLon/2) * Math.sin(dLon/2);
+      return R * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)));
+    }
+
+    function addRoutePoint(lat, lng, force = false) {
+      if (!Number.isFinite(lat) || !Number.isFinite(lng)) return;
+      const last = routePoints[routePoints.length - 1];
+      // 約10m以上動いた点だけ保存。GPSの微細な揺れで履歴が膨らむのを防ぐ
+      if (!last || force || calculateHaversineDistance(last.lat, last.lng, lat, lng) >= 0.01) {
+        routePoints.push({ lat, lng, phase: appState === 'OCCUPIED' ? 'red' : 'blue' });
+      }
+    }
+
+    function startGPSWatch() {
+      const gpsBadge = document.getElementById('gpsStatusBadge');
+
+      // すでにGPS監視中なら、新しいwatchPositionを重複起動しない
+      if (watchId !== null) {
+        return;
+      }
+
+      if (!navigator.geolocation) {
+        gpsBadge.innerText = "GPS非対応";
+        document.getElementById('addressDisplay').innerText = "GPS非対応のためシミュレータに切替";
+        isSimulationMode = true;
+        startSimulation();
+        return;
+      }
+
+      gpsBadge.innerText = "測位中...";
+      gpsBadge.className = "text-cyan-400 bg-cyan-950/50 px-2 py-0.5 rounded-full border border-cyan-800/50 animate-pulse";
+
+      watchId = navigator.geolocation.watchPosition(
+        (position) => {
+          handleGPSPosition(position);
+        },
+        (error) => {
+          gpsBadge.innerText = "GPSエラー";
+          gpsBadge.className = "text-red-400 bg-red-950/50 px-2 py-0.5 rounded-full border border-red-800/50";
+          document.getElementById('addressDisplay').innerText = "GPS信号を取得できません。シミュレータは手動で切替できます。";
+          // 一時的なGPSエラーで実走行をシミュレーションに切り替えない
+        },
+        { enableHighAccuracy: true, maximumAge: 0, timeout: 10000 }
+      );
+    }
+
+    function handleGPSPosition(position) {
+      const gpsBadge = document.getElementById('gpsStatusBadge');
+      gpsBadge.innerText = "GPS捕捉+OSRM";
+      gpsBadge.className = "text-emerald-400 bg-emerald-950/50 px-2 py-0.5 rounded-full border border-emerald-800/50";
+
+      const lat = position.coords.latitude;
+      const lng = position.coords.longitude;
+      const gpsAccuracy = Number(position.coords.accuracy);
+      const gpsSpeedKmh = position.coords.speed != null ? Math.max(0, position.coords.speed * 3.6) : 0;
+      const currentPos = { lat, lng };
+      const nowTs = Number(position.timestamp) || Date.now();
+
+      // GPSジャンプ対策：精度不良・現実離れした急速移動は採用しない。
+      // 異常点は lastPosition / latestGPSPosition にも入れないため、
+      // 次の正常GPSとの間で巨大な距離が発生することも防ぐ。
+      if (Number.isFinite(gpsAccuracy) && gpsAccuracy > MAX_GPS_ACCURACY_METERS) {
+        gpsBadge.innerText = `GPS精度低下 (${Math.round(gpsAccuracy)}m)`;
+        gpsBadge.className = "text-amber-400 bg-amber-950/50 px-2 py-0.5 rounded-full border border-amber-800/50";
+        return;
+      }
+
+      if (lastPosition && lastGPSAcceptedTimestamp > 0) {
+        const jumpKm = calculateHaversineDistance(lastPosition.lat, lastPosition.lng, lat, lng);
+        const elapsedSec = Math.max(1, (nowTs - lastGPSAcceptedTimestamp) / 1000);
+        const calculatedSpeedKmh = (jumpKm / elapsedSec) * 3600;
+
+        if (calculatedSpeedKmh > MAX_GPS_SPEED_KMH) {
+          gpsBadge.innerText = `GPSジャンプ除外 (${Math.round(calculatedSpeedKmh)}km/h)`;
+          gpsBadge.className = "text-amber-400 bg-amber-950/50 px-2 py-0.5 rounded-full border border-amber-800/50";
+          return;
+        }
+      }
+
+      speedKmh = gpsSpeedKmh;
+      lastPosition = currentPos;
+      latestGPSPosition = currentPos;
+      lastGPSAcceptedTimestamp = nowTs;
+
+      // 迎車中もGPS軌跡は保存する。ただしメーター距離は増やさない。
+      if (startTime && (appState === 'OCCUPIED' || appState === 'ENGAGED')) {
+        addRoutePoint(lat, lng);
+      }
+
+      if (!lastRoutedPosition) {
+        lastRoutedPosition = currentPos;
+      }
+
+      // 最初の測位を発着地点の基準にする
+      if (!startTime || (startLocation.address && startLocation.address.includes('(未測位)'))) {
+        startLocation.lat = lat;
+        startLocation.lng = lng;
+        reverseGeocode(lat, lng).then(addr => { startLocation.address = addr; });
+      }
+
+      endLocation.lat = lat;
+      endLocation.lng = lng;
+
+      // ルート計算は非同期だが、計算中に届いたGPS位置を捨てない
+      processPendingRouteDistance();
+
+      document.getElementById('addressDisplay').innerText = `緯度: ${lat.toFixed(5)}, 経度: ${lng.toFixed(5)} (埼玉基準ルート演算中)`;
+      updateDisplay();
+    }
+
+    async function processPendingRouteDistance() {
+      if (isRoutingFetching) return;
+      if (appState !== 'OCCUPIED' && appState !== 'ENGAGED') return;
+      if (!lastRoutedPosition || !latestGPSPosition) return;
+
+      // GPS更新が続いている間も、最後に処理した地点から最新地点までを順番に処理する
+      while (latestGPSPosition && lastRoutedPosition &&
+             (latestGPSPosition.lat !== lastRoutedPosition.lat || latestGPSPosition.lng !== lastRoutedPosition.lng)) {
+        const from = { ...lastRoutedPosition };
+        const to = { ...latestGPSPosition };
+        // OSRM待ちの途中で実車ボタンが押されても、リクエスト開始時のフェーズで計上する
+        const phaseAtRequest = appState;
+
+        isRoutingFetching = true;
+        try {
+          const routeDist = await fetchRouteDistance(from.lat, from.lng, to.lat, to.lng);
+          // OSRMが返した道路距離にも上限をかける。GPSジャンプを二重に防止。
+          if (routeDist < 3.0) {
+            if (phaseAtRequest === 'ENGAGED') {
+              pickupDistance += routeDist;
+            } else if (phaseAtRequest === 'OCCUPIED') {
+              totalDistance += routeDist;
+              if (speedKmh > LOW_SPEED_THRESHOLD) {
+                meterProgressDistance += routeDist;
+              }
+              recalculateMeter();
+            }
+          }
+        } finally {
+          // OSRM処理済み地点を更新。途中で届いた最新GPSは次のループで処理する
+          lastRoutedPosition = to;
+          isRoutingFetching = false;
+        }
+
+        if (appState !== 'OCCUPIED' && appState !== 'ENGAGED') break;
+      }
+    }
+
+    function startSimulation() {
+      if (simInterval) clearInterval(simInterval);
+      simInterval = setInterval(() => {
+        if (appState === 'OCCUPIED' || appState === 'ENGAGED') {
+          speedKmh = 25.0;
+          endLocation.lat += 0.0005;
+          endLocation.lng += 0.0005;
+          addRoutePoint(endLocation.lat, endLocation.lng);
+          if (appState === 'ENGAGED') {
+            pickupDistance += 0.05;
+          } else {
+            totalDistance += 0.05;
+            meterProgressDistance += 0.05;
+            recalculateMeter();
+          }
+          updateDisplay();
+        }
+      }, 3000);
+    }
+
+    function recalculateMeter() {
+      if (!isOccupiedStarted) {
+        currentFare = isDispatchApplied ? DISPATCH_FEE : 0;
+        return;
+      }
+
+      let baseAmount = BASE_FARE;
+      if (isDispatchApplied) baseAmount += DISPATCH_FEE;
+
+      // 時間距離併用運賃は「距離」と「低速時間」を別々に100円加算するのではなく、
+      // メーター進行距離として合算する。
+      // 初乗り1.027kmまでは500円に含まれる。
+      const effectiveDistanceUnit = isNightActive() ? (DISTANCE_UNIT / 1.2) : DISTANCE_UNIT;
+      const effectiveBaseDistance = BASE_DISTANCE;
+
+      if (meterProgressDistance <= effectiveBaseDistance) {
+        currentFare = baseAmount;
+      } else {
+        const extraDist = meterProgressDistance - effectiveBaseDistance;
+        const addUnits = Math.ceil(extraDist / effectiveDistanceUnit);
+        currentFare = baseAmount + (addUnits * DISTANCE_FARE_UNIT);
+      }
+
+      currentFare = Math.round(currentFare / 10) * 10;
+    }
+
+    // メーター進行距離を「低速10km/hで走った場合の秒数」に換算して、
+    // 初乗り残り時間 / 次回加算までの時間を表示する。
+    function updateMeterProgressInfo() {
+      const el = document.getElementById('meterProgressInfo');
+      if (!el) return;
+
+      if (!isOccupiedStarted) {
+        el.innerText = '初乗り残り --:--';
+        el.className = 'mt-1 text-[10px] sm:text-xs font-mono text-slate-500 text-center';
+        return;
+      }
+
+      const lowSpeedMetersPerSecond = 10 / 3600;
+      let remainingKm;
+      let label;
+
+      if (meterProgressDistance < BASE_DISTANCE) {
+        remainingKm = BASE_DISTANCE - meterProgressDistance;
+        label = '初乗り残り';
+      } else {
+        const effectiveDistanceUnit = isNightActive()
+          ? (DISTANCE_UNIT / 1.2)
+          : DISTANCE_UNIT;
+        const extraDist = meterProgressDistance - BASE_DISTANCE;
+        const progressInUnit = extraDist % effectiveDistanceUnit;
+        remainingKm = progressInUnit === 0 ? effectiveDistanceUnit : effectiveDistanceUnit - progressInUnit;
+        label = '次回加算まで';
+      }
+
+      let remainingSeconds = Math.max(0, Math.ceil(remainingKm / lowSpeedMetersPerSecond));
+      const mins = Math.floor(remainingSeconds / 60).toString().padStart(2, '0');
+      const secs = (remainingSeconds % 60).toString().padStart(2, '0');
+
+      if (speedKmh <= LOW_SPEED_THRESHOLD) {
+        el.innerText = `${label} ${mins}:${secs}`;
+        el.className = 'mt-1 text-[10px] sm:text-xs font-mono text-amber-300 text-center';
+      } else {
+        el.innerText = `${label} ${mins}:${secs}（低速時）`;
+        el.className = 'mt-1 text-[10px] sm:text-xs font-mono text-slate-400 text-center';
+      }
+    }
+
+    function updateDisplay() {
+      document.getElementById('fareDisplay').innerText = `¥${currentFare.toLocaleString()}`;
+      updateMeterProgressInfo();
+      document.getElementById('distanceDisplay').innerText = totalDistance.toFixed(2);
+      
+      const mins = Math.floor(accumulatedSeconds / 60).toString().padStart(2, '0');
+      const secs = (accumulatedSeconds % 60).toString().padStart(2, '0');
+      document.getElementById('timeDisplay').innerText = `${mins}:${secs}`;
+      document.getElementById('speedDisplay').innerText = speedKmh.toFixed(1);
+    }
+
+    function openHistoryModal() {
+      renderHistoryList();
+      document.getElementById('historyModal').classList.remove('hidden');
+    }
+
+    function closeHistoryModal() {
+      document.getElementById('historyModal').classList.add('hidden');
+    }
+
+    function getElapsedSeconds(startIso, endIso) {
+      if (!startIso || !endIso) return 0;
+      const a = new Date(startIso).getTime();
+      const b = new Date(endIso).getTime();
+      if (!Number.isFinite(a) || !Number.isFinite(b) || b < a) return 0;
+      return Math.round((b - a) / 1000);
+    }
+
+    function formatDuration(sec) {
+      sec = Math.max(0, Math.round(Number(sec) || 0));
+      const h = Math.floor(sec / 3600);
+      const m = Math.floor((sec % 3600) / 60);
+      const s = sec % 60;
+      if (h > 0) return `${h}時間${m}分${s}秒`;
+      return `${m}分${s}秒`;
+    }
+
+    function formatDateTime(iso) {
+      if (!iso) return '--';
+      const d = new Date(iso);
+      if (Number.isNaN(d.getTime())) return '--';
+      return d.toLocaleString('ja-JP', { month:'numeric', day:'numeric', hour:'2-digit', minute:'2-digit', second:'2-digit' });
+    }
+
+    function calculateOccupiedRate(pickupKm, occupiedKm) {
+      const p = Number(pickupKm) || 0;
+      const o = Number(occupiedKm) || 0;
+      const total = p + o;
+      return total > 0 ? Number((o / total * 100).toFixed(1)) : 0;
+    }
+
+    function getLogMetrics(log) {
+      const pickupKm = Number(log.pickupDistance);
+      const occupiedKm = Number(log.occupiedDistance ?? log.distance);
+      const hasNewMetrics = Number.isFinite(pickupKm) && Number.isFinite(occupiedKm) && (log.occupiedStartAt || log.engageStartAt || log.dropoffAt);
+      const p = hasNewMetrics ? Math.max(0, pickupKm) : 0;
+      const o = Number.isFinite(occupiedKm) ? Math.max(0, occupiedKm) : 0;
+      const total = hasNewMetrics ? (Number(log.totalRouteDistance) || (p + o)) : o;
+      const pickupSec = Number.isFinite(Number(log.pickupSeconds)) ? Number(log.pickupSeconds) : getElapsedSeconds(log.engageStartAt, log.occupiedStartAt);
+      const occupiedSec = Number.isFinite(Number(log.occupiedSeconds)) ? Number(log.occupiedSeconds) : (Number(log.timeSec) || getElapsedSeconds(log.occupiedStartAt, log.dropoffAt));
+      const rate = Number.isFinite(Number(log.occupiedRate)) ? Number(log.occupiedRate) : calculateOccupiedRate(p, o);
+      return { pickupKm:p, occupiedKm:o, totalKm:total, pickupSec, occupiedSec, rate };
+    }
+
+    function renderTodaySummary() {
+      const box = document.getElementById('todaySummaryBox');
+      if (!box) return;
+      const today = new Date();
+      const ymd = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
+      const todayLogs = rideLogs.filter(log => {
+        const src = log.dropoffAt || log.engageStartAt || log.occupiedStartAt;
+        if (!src) return false;
+        const d = new Date(src);
+        return !Number.isNaN(d.getTime()) && `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}` === ymd;
+      });
+      let fare=0, fixed=0, pickup=0, occupied=0, pickupSec=0, occupiedSec=0;
+      todayLogs.forEach(log => {
+        const m = getLogMetrics(log);
+        fare += Number(log.fare) || 0;
+        fixed += Number(log.fixedFare) || 0;
+        pickup += m.pickupKm; occupied += m.occupiedKm;
+        pickupSec += m.pickupSec; occupiedSec += m.occupiedSec;
+      });
+      const total = pickup + occupied;
+      const rate = calculateOccupiedRate(pickup, occupied);
+      box.innerHTML = `
+        <div class="text-[10px] text-cyan-300 font-bold mb-2 flex items-center justify-between"><span><i class="fa-solid fa-chart-column mr-1"></i>当日サマリー</span><span class="text-slate-500 font-normal">${today.getMonth()+1}/${today.getDate()}</span></div>
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-center">
+          <div class="bg-slate-900/70 rounded-lg p-2 border border-slate-800"><div class="text-[9px] text-slate-500">件数</div><div class="font-digital text-cyan-300 font-bold">${todayLogs.length}件</div></div>
+          <div class="bg-slate-900/70 rounded-lg p-2 border border-slate-800"><div class="text-[9px] text-slate-500">運賃</div><div class="font-digital text-cyan-300 font-bold">¥${fare.toLocaleString()}</div></div>
+          <div class="bg-slate-900/70 rounded-lg p-2 border border-slate-800"><div class="text-[9px] text-slate-500">総走行距離</div><div class="font-mono text-slate-200 font-bold">${total.toFixed(2)}km</div></div>
+          <div class="bg-slate-900/70 rounded-lg p-2 border border-slate-800"><div class="text-[9px] text-slate-500">実車率</div><div class="font-mono text-emerald-300 font-bold">${rate.toFixed(1)}%</div></div>
+        </div>
+        <div class="grid grid-cols-2 gap-2 mt-2 text-[10px] font-mono text-slate-400">
+          <div>迎車 ${pickup.toFixed(2)}km / ${formatDuration(pickupSec)}</div>
+          <div class="text-right">実車 ${occupied.toFixed(2)}km / ${formatDuration(occupiedSec)}</div>
+        </div>`;
+    }
+
+    function renderHistoryList() {
+      const container = document.getElementById('historyListContainer');
+      container.innerHTML = '';
+      renderTodaySummary();
+
+      let sumFare = 0;
+      let sumFixed = 0;
+      let sumDiff = 0;
+
+      if (rideLogs.length === 0) {
+        container.innerHTML = `<div class="text-center py-8 text-slate-500 text-xs">保存された走行履歴はありません</div>`;
+        document.getElementById('sumTotalFare').innerText = '¥0';
+        document.getElementById('sumTotalFixed').innerText = '¥0';
+        document.getElementById('sumTotalDiff').innerText = '¥0';
+        return;
+      }
+
+      rideLogs.forEach((log) => {
+        sumFare += log.fare;
+        if (log.fixedFare > 0) {
+          sumFixed += log.fixedFare;
+          sumDiff += (log.fixedFare - log.fare);
+        }
+      });
+
+      document.getElementById('sumTotalFare').innerText = `¥${sumFare.toLocaleString()}`;
+      document.getElementById('sumTotalFixed').innerText = `¥${sumFixed.toLocaleString()}`;
+      const diffEl = document.getElementById('sumTotalDiff');
+      diffEl.innerText = `${sumDiff >= 0 ? '+' : ''}¥${sumDiff.toLocaleString()}`;
+      diffEl.className = `font-digital font-bold text-sm sm:text-base ${sumDiff >= 0 ? 'text-amber-400' : 'text-cyan-400'}`;
+
+      const sortedLogs = [...rideLogs].sort((a, b) => b.id - a.id);
+      const groups = [];
+      
+      sortedLogs.forEach(log => {
+        const logTime = log.id;
+        let placed = false;
+        for (let g of groups) {
+          if (Math.abs(logTime - g.baseTime) <= 20 * 3600 * 1000) {
+            g.logs.push(log);
+            placed = true;
+            break;
+          }
+        }
+        if (!placed) {
+          groups.push({
+            baseTime: logTime,
+            logs: [log]
+          });
+        }
+      });
+
+      groups.forEach((group) => {
+        let groupFare = 0;
+        let groupFixed = 0;
+
+        group.logs.forEach(log => {
+          groupFare += log.fare;
+          if (log.fixedFare > 0) {
+            groupFixed += log.fixedFare;
+          }
+        });
+
+        const groupHeaderDate = new Date(group.baseTime).toLocaleDateString('ja-JP', { month: 'numeric', day: 'numeric', weekday: 'short' });
+        
+        const groupWrapper = document.createElement('div');
+        groupWrapper.className = "space-y-2 pb-3 border-b border-slate-800/80 last:border-0";
+        
+        const groupHeader = document.createElement('div');
+        groupHeader.className = "bg-slate-950 px-3 py-1.5 rounded-lg border border-slate-800/80 flex justify-between items-center text-[11px] font-mono text-cyan-400";
+        groupHeader.innerHTML = `
+          <span class="font-bold"><i class="fa-solid fa-calendar-day mr-1"></i> 運行日グループ (${groupHeaderDate} 起算 20h)</span>
+          <span class="text-slate-300">計: ¥${groupFare.toLocaleString()} (確定: ¥${groupFixed.toLocaleString()})</span>
+        `;
+        groupWrapper.appendChild(groupHeader);
+
+        const innerList = document.createElement('div');
+        innerList.className = "space-y-2 pl-2";
+
+        group.logs.forEach((log) => {
+          const mins = Math.floor(log.timeSec / 60);
+          const secs = log.timeSec % 60;
+          const timeStr = `${mins}分${secs}秒`;
+
+          let diffColor = "text-slate-400";
+          let diffText = "比較なし";
+          if (log.fixedFare > 0) {
+            if (log.diff > 0) {
+              diffColor = "text-amber-400";
+              diffText = `ライドシェア+¥${log.diff.toLocaleString()}`;
+            } else if (log.diff < 0) {
+              diffColor = "text-cyan-400";
+              diffText = `メーター+¥${Math.abs(log.diff).toLocaleString()}`;
+            } else {
+              diffText = `差額なし`;
+            }
+          }
+
+          const m = getLogMetrics(log);
+          const tags = [];
+          if (log.isNight) tags.push('<span class="bg-indigo-950 text-indigo-300 px-1.5 py-0.5 rounded text-[9px] border border-indigo-800">深夜割増(短縮方式)</span>');
+          if (log.isDispatch) tags.push('<span class="bg-amber-950 text-amber-300 px-1.5 py-0.5 rounded text-[9px] border border-amber-800">迎車込</span>');
+
+          const item = document.createElement('div');
+          item.className = "py-2.5 px-2 bg-slate-900/40 rounded-lg space-y-2 text-xs group border border-slate-800/40";
+          item.innerHTML = `
+            <div class="flex justify-between items-center text-slate-400">
+              <span class="flex items-center space-x-1.5"><i class="fa-regular fa-clock"></i><span>${log.date}</span></span>
+              <div class="flex items-center space-x-3">
+                <span class="font-mono text-cyan-400 font-bold text-sm">¥${log.fare.toLocaleString()}</span>
+                <button onclick="deleteLogItem(${log.id})" class="text-slate-500 hover:text-red-400 p-1 transition" title="この履歴を削除">
+                  <i class="fa-solid fa-trash-can"></i>
+                </button>
+              </div>
+            </div>
+            <div class="flex items-center space-x-1">${tags.join(' ')}</div>
+            
+            <div onclick="openRouteMapFromHistory(${Number(log.id)})" class="bg-slate-950/70 hover:bg-slate-800/80 border border-slate-800 rounded-lg p-2.5 transition cursor-pointer space-y-1 group-hover:border-cyan-500/40">
+              <div class="flex items-center space-x-1.5 truncate text-emerald-400">
+                <i class="fa-solid fa-location-dot text-[10px]"></i>
+                <span class="truncate">発: ${log.startAddr || '埼玉県内'}</span>
+              </div>
+              <div class="flex items-center space-x-1.5 truncate text-amber-400">
+                <i class="fa-solid fa-flag-checkered text-[10px]"></i>
+                <span class="truncate">着: ${log.endAddr || '埼玉県内'}</span>
+              </div>
+              <div class="grid grid-cols-2 gap-x-3 gap-y-1 pt-1 text-[10px] text-slate-400 font-mono border-t border-slate-800/60">
+                <span>迎車START: <b class="text-amber-300">${formatDateTime(log.engageStartAt)}</b></span>
+                <span>迎車距離: <b class="text-amber-300">${m.pickupKm.toFixed(2)}km</b></span>
+                <span>迎車時間: ${formatDuration(m.pickupSec)}</span>
+                <span>実車START: <b class="text-red-300">${formatDateTime(log.occupiedStartAt)}</b></span>
+                <span>実車距離: <b class="text-red-300">${m.occupiedKm.toFixed(2)}km</b></span>
+                <span>実車時間: ${formatDuration(m.occupiedSec)}</span>
+                <span>降車: <b class="text-emerald-300">${formatDateTime(log.dropoffAt)}</b></span>
+                <span>総走行: <b class="text-slate-200">${m.totalKm.toFixed(2)}km</b> / 実車率 <b class="text-emerald-300">${m.rate.toFixed(1)}%</b></span>
+              </div>
+              <div class="flex justify-between pt-1 text-[11px] text-slate-400 font-mono">
+                <span>メーター: ${log.distance}km / ${timeStr}</span>
+                <span class="${diffColor}">事前確定: ¥${log.fixedFare > 0 ? log.fixedFare.toLocaleString() : '0'} (${diffText})</span>
+              </div>
+              <div class="text-[10px] text-cyan-400/80 text-right pt-0.5"><i class="fa-solid fa-map"></i> クリックして地図ルート表示 →</div>
+            </div>
+          `;
+          innerList.appendChild(item);
+        });
+
+        groupWrapper.appendChild(innerList);
+        container.appendChild(groupWrapper);
+      });
+    }
+
+    function escapeHtml(str) {
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    // ルート履歴を最新100件に制限する。
+    // rideLogs自体は削除せず、101件目以降の古いルート座標だけ削除する。
+    function trimOldRouteHistory() {
+      if (!Array.isArray(rideLogs) || rideLogs.length <= 100) return;
+
+      let changed = false;
+      for (let i = 100; i < rideLogs.length; i++) {
+        if (Array.isArray(rideLogs[i].routePoints) && rideLogs[i].routePoints.length > 0) {
+          delete rideLogs[i].routePoints;
+          changed = true;
+        }
+      }
+
+      if (changed) {
+        try {
+          localStorage.setItem('taxi_ride_logs_pro_saitama', JSON.stringify(rideLogs));
+        } catch(e) {}
+      }
+    }
+
+    function deleteLogItem(id) {
+      rideLogs = rideLogs.filter(log => log.id !== id);
+      try {
+        localStorage.setItem('taxi_ride_logs_pro_saitama', JSON.stringify(rideLogs));
+      } catch(e) {}
+      renderHistoryList();
+    }
+
+    function clearHistory() {
+      rideLogs = [];
+      localStorage.removeItem('taxi_ride_logs_pro_saitama');
+      renderHistoryList();
+    }
+
+    // 履歴カードから直接呼び出す入口。
+    // routePointsをHTMLのonclick属性へ直接埋め込まないことで、
+    // 住所やGPS点数が多くてもクリックイベントが壊れないようにする。
+    function openRouteMapFromHistory(logId) {
+      const log = rideLogs.find(item => Number(item.id) === Number(logId));
+      if (!log) {
+        showModal("地図表示エラー", "この履歴データが見つかりません。履歴を再読み込みしてください。");
+        return;
+      }
+
+      const lat1 = Number(log.startLat);
+      const lng1 = Number(log.startLng);
+      const lat2 = Number(log.endLat);
+      const lng2 = Number(log.endLng);
+
+      if (![lat1, lng1, lat2, lng2].every(Number.isFinite)) {
+        showModal("地図表示エラー", "この履歴には有効なGPS位置情報がありません。");
+        return;
+      }
+
+      openRouteMap(
+        lat1,
+        lng1,
+        lat2,
+        lng2,
+        log.startAddr || '出発地',
+        log.endAddr || '到着地',
+        Array.isArray(log.routePoints) ? log.routePoints : [],
+        log
+      );
+    }
+
+    function openRouteMap(lat1, lng1, lat2, lng2, startText, endText, savedRoutePoints, logData) {
+      document.getElementById('mapStartAddrText').innerText = startText || '出発地';
+      document.getElementById('mapEndAddrText').innerText = endText || '到着地';
+
+      const fallbackPoints = [
+        [Number(lat1), Number(lng1)],
+        [Number(lat2), Number(lng2)]
+      ];
+      const savedPoints = Array.isArray(savedRoutePoints)
+        ? savedRoutePoints
+            .filter(p => p && Number.isFinite(Number(p.lat)) && Number.isFinite(Number(p.lng)))
+            .map(p => [Number(p.lat), Number(p.lng)])
+        : [];
+      const points = savedPoints.length >= 2 ? savedPoints : fallbackPoints;
+      const validPoints = points.filter(p => Number.isFinite(p[0]) && Number.isFinite(p[1]));
+      if (validPoints.length < 2) return;
+
+      const mapDetails = document.getElementById('mapRouteDetails');
+      if (mapDetails) {
+        const m = logData ? getLogMetrics(logData) : { pickupKm:0, occupiedKm:0, totalKm:0, pickupSec:0, occupiedSec:0, rate:0 };
+        mapDetails.innerHTML = `
+          <span>迎車START: <b class="text-amber-300">${formatDateTime(logData?.engageStartAt)}</b></span>
+          <span>迎車距離: <b class="text-amber-300">${m.pickupKm.toFixed(2)}km</b></span>
+          <span>迎車時間: ${formatDuration(m.pickupSec)}</span>
+          <span>実車START: <b class="text-red-300">${formatDateTime(logData?.occupiedStartAt)}</b></span>
+          <span>実車距離: <b class="text-red-300">${m.occupiedKm.toFixed(2)}km</b></span>
+          <span>実車時間: ${formatDuration(m.occupiedSec)}</span>
+          <span>降車: <b class="text-emerald-300">${formatDateTime(logData?.dropoffAt)}</b></span>
+          <span>総走行: <b class="text-slate-200">${m.totalKm.toFixed(2)}km</b> / 実車率 <b class="text-emerald-300">${m.rate.toFixed(1)}%</b></span>`;
+      }
+
+      document.getElementById('mapModal').classList.remove('hidden');
+
+      setTimeout(() => {
+        if (!routeMap) {
+          routeMap = L.map('routeMap', { zoomControl: true });
+          L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19,
+            attribution: '&copy; OpenStreetMap contributors'
+          }).addTo(routeMap);
+        }
+
+        if (routePolyline) routeMap.removeLayer(routePolyline);
+        if (routePolylineBlue) routeMap.removeLayer(routePolylineBlue);
+        if (routePolylineRed) routeMap.removeLayer(routePolylineRed);
+        routePolyline = null;
+        routePolylineBlue = null;
+        routePolylineRed = null;
+        if (routeStartMarker) routeMap.removeLayer(routeStartMarker);
+        if (routeEndMarker) routeMap.removeLayer(routeEndMarker);
+        if (routeOccupiedMarker) routeMap.removeLayer(routeOccupiedMarker);
+        routeStartMarker = null;
+        routeEndMarker = null;
+        routeOccupiedMarker = null;
+
+        // 迎車→実車は青、実車→空車清算は赤で表示
+        // 古い履歴（phaseがないデータ）は従来どおり青1本で表示する。
+        const hasPhase = savedRoutePoints.some(p => p && (p.phase === 'blue' || p.phase === 'red'));
+        if (hasPhase) {
+          const bluePoints = savedRoutePoints
+            .filter(p => p && p.phase === 'blue' && Number.isFinite(Number(p.lat)) && Number.isFinite(Number(p.lng)))
+            .map(p => [Number(p.lat), Number(p.lng)]);
+          const redPoints = savedRoutePoints
+            .filter(p => p && p.phase === 'red' && Number.isFinite(Number(p.lat)) && Number.isFinite(Number(p.lng)))
+            .map(p => [Number(p.lat), Number(p.lng)]);
+
+          // 各区間が1点しかない場合でも、表示できるよう境界点を補完
+          if (bluePoints.length === 1 && redPoints.length > 0) bluePoints.push(redPoints[0]);
+          if (redPoints.length === 1 && bluePoints.length > 0) redPoints.unshift(bluePoints[bluePoints.length - 1]);
+
+          routePolylineBlue = bluePoints.length >= 2
+            ? L.polyline(bluePoints, { color: '#2563eb', weight: 5, opacity: 0.9 }).addTo(routeMap)
+            : null;
+          routePolylineRed = redPoints.length >= 2
+            ? L.polyline(redPoints, { color: '#ef4444', weight: 5, opacity: 0.9 }).addTo(routeMap)
+            : null;
+
+          const boundsLayers = [routePolylineBlue, routePolylineRed].filter(Boolean);
+          if (boundsLayers.length > 0) {
+            const group = L.featureGroup(boundsLayers);
+            routeMap.fitBounds(group.getBounds(), { padding: [20, 20] });
+          } else {
+            routePolyline = L.polyline(validPoints, { weight: 5, opacity: 0.9 }).addTo(routeMap);
+            routeMap.fitBounds(routePolyline.getBounds(), { padding: [20, 20] });
+          }
+        } else {
+          routePolyline = L.polyline(validPoints, { weight: 5, opacity: 0.9 }).addTo(routeMap);
+          routeMap.fitBounds(routePolyline.getBounds(), { padding: [20, 20] });
+        }
+
+        // 3点ピン：迎車START=黄、実車START=赤、降車=緑
+        const engagePoint = savedRoutePoints.find(p => p && p.phase === 'blue');
+        const occupiedPoint = savedRoutePoints.find(p => p && p.phase === 'red');
+        const pickupMarkerIcon = L.divIcon({ className:'phase-pin-wrap', html:'<div style="width:18px;height:18px;border-radius:50%;background:#f59e0b;border:3px solid #fff;box-shadow:0 1px 5px rgba(0,0,0,.6)"></div>', iconSize:[18,18], iconAnchor:[9,9] });
+        const occupiedMarkerIcon = L.divIcon({ className:'phase-pin-wrap', html:'<div style="width:18px;height:18px;border-radius:50%;background:#ef4444;border:3px solid #fff;box-shadow:0 1px 5px rgba(0,0,0,.6)"></div>', iconSize:[18,18], iconAnchor:[9,9] });
+        const endMarkerIcon = L.divIcon({ className:'phase-pin-wrap', html:'<div style="width:18px;height:18px;border-radius:50%;background:#22c55e;border:3px solid #fff;box-shadow:0 1px 5px rgba(0,0,0,.6)"></div>', iconSize:[18,18], iconAnchor:[9,9] });
+        const engageLatLng = engagePoint ? [Number(engagePoint.lat), Number(engagePoint.lng)] : validPoints[0];
+        const occupiedLatLng = occupiedPoint ? [Number(occupiedPoint.lat), Number(occupiedPoint.lng)] : null;
+        const endLatLng = validPoints[validPoints.length - 1];
+        routeStartMarker = L.marker(engageLatLng, { icon: pickupMarkerIcon }).addTo(routeMap).bindPopup('迎車START');
+        if (occupiedLatLng && (occupiedLatLng[0] !== engageLatLng[0] || occupiedLatLng[1] !== engageLatLng[1])) {
+          routeOccupiedMarker = L.marker(occupiedLatLng, { icon: occupiedMarkerIcon }).addTo(routeMap).bindPopup('実車START');
+        }
+        routeEndMarker = L.marker(endLatLng, { icon: endMarkerIcon }).addTo(routeMap).bindPopup('降車');
+        setTimeout(() => routeMap.invalidateSize(), 100);
+      }, 50);
+    }
+
+    function closeMapModal() {
+      document.getElementById('mapModal').classList.add('hidden');
+      if (routeMap) {
+        setTimeout(() => routeMap.invalidateSize(), 100);
+      }
+    }
+
+  </script>
+</body>
+</html>
