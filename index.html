@@ -327,6 +327,345 @@
       }
     }
 
+
+    /* メーター計算方式インジケーター */
+    .fare-calc-indicator {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      min-height: 14px;
+      white-space: nowrap;
+    }
+    .fare-calc-lamp {
+      width: 8px;
+      height: 8px;
+      min-width: 8px;
+      border-radius: 9999px;
+      display: inline-block;
+      background: #475569;
+      box-shadow: 0 0 3px rgba(71,85,105,.55);
+    }
+    .fare-calc-lamp.distance {
+      background: #2563eb;
+      box-shadow: 0 0 7px rgba(37,99,235,.95);
+    }
+    .fare-calc-lamp.time {
+      background: #ef4444;
+      box-shadow: 0 0 8px rgba(239,68,68,.95);
+      animation: fareCalcTimeBlink .75s steps(1,end) infinite;
+    }
+    .fare-calc-lamp.off {
+      background: #334155;
+      box-shadow: none;
+      animation: none;
+      opacity: .55;
+    }
+    .fare-calc-label {
+      font-size: 8px;
+      line-height: 1;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      letter-spacing: .02em;
+    }
+    .fare-calc-label.distance { color: #60a5fa; }
+    .fare-calc-label.time { color: #f87171; }
+    .fare-calc-label.off { color: #64748b; }
+    @keyframes fareCalcTimeBlink {
+      0%, 49% { opacity: 1; }
+      50%, 100% { opacity: .18; }
+    }
+
+
+    /* =========================================================
+       スマホ横画面：メイン画面を1画面内に完全収納
+       スクロールなし・内容を圧縮して表示
+       ========================================================= */
+    @media (orientation: landscape) and (max-width: 767px) {
+      html, body {
+        width: 100%;
+        height: 100%;
+        min-height: 100%;
+        overflow: hidden !important;
+      }
+
+      body {
+        min-height: 100dvh !important;
+        height: 100dvh !important;
+        overflow: hidden !important;
+      }
+
+      header {
+        flex: 0 0 auto !important;
+        padding-top: 0.18rem !important;
+        padding-bottom: 0.18rem !important;
+      }
+
+      header > div {
+        min-height: 0 !important;
+      }
+
+      header .text-xs {
+        line-height: 1 !important;
+      }
+
+      header button,
+      header .bg-amber-500 {
+        padding-top: 0.18rem !important;
+        padding-bottom: 0.18rem !important;
+        padding-left: 0.45rem !important;
+        padding-right: 0.45rem !important;
+        font-size: 9px !important;
+      }
+
+      main {
+        box-sizing: border-box !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        height: calc(100dvh - 42px) !important;
+        min-height: 0 !important;
+        flex: 1 1 auto !important;
+        overflow: hidden !important;
+        padding: 2px 4px !important;
+        justify-content: flex-start !important;
+      }
+
+      #consoleWrapper {
+        box-sizing: border-box !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        height: 55% !important;
+        min-height: 0 !important;
+        padding: 0.28rem !important;
+        border-radius: 0.65rem !important;
+        overflow: hidden !important;
+      }
+
+      #consoleWrapper > .flex {
+        margin-bottom: 0.18rem !important;
+        padding-bottom: 0.15rem !important;
+        height: 22px !important;
+        min-height: 0 !important;
+      }
+
+      #consoleWrapper > .meter-console-layout {
+        height: calc(100% - 25px) !important;
+        min-height: 0 !important;
+        gap: 0.3rem !important;
+      }
+
+      #consoleWrapper > .meter-console-layout > .flex-1 {
+        min-height: 0 !important;
+        overflow: hidden !important;
+      }
+
+      #consoleWrapper .bg-black\/90 {
+        padding: 0.2rem !important;
+        margin-bottom: 0.2rem !important;
+      }
+
+      #fareDisplay {
+        font-size: clamp(2rem, 10vw, 3.2rem) !important;
+        line-height: 0.9 !important;
+      }
+
+      #meterProgressInfo {
+        margin-top: 0.1rem !important;
+        font-size: 8px !important;
+        line-height: 1 !important;
+      }
+
+      #consoleWrapper .grid.grid-cols-3 {
+        gap: 0.2rem !important;
+        margin-top: 0.15rem !important;
+      }
+
+      #consoleWrapper .grid.grid-cols-3 > div {
+        padding: 0.22rem !important;
+        min-height: 0 !important;
+      }
+
+      #consoleWrapper .grid.grid-cols-3 .text-\[9px\] {
+        font-size: 7px !important;
+        line-height: 1 !important;
+      }
+
+      #consoleWrapper .grid.grid-cols-3 .text-sm {
+        font-size: 0.75rem !important;
+        line-height: 1 !important;
+      }
+
+      #consoleWrapper .grid.grid-cols-3 .text-lg {
+        font-size: 0.85rem !important;
+        line-height: 1 !important;
+      }
+
+      #consoleWrapper .fare-calc-indicator {
+        gap: 2px !important;
+        min-height: 10px !important;
+      }
+
+      #consoleWrapper .fare-calc-lamp {
+        width: 6px !important;
+        min-width: 6px !important;
+        height: 6px !important;
+      }
+
+      #consoleWrapper .fare-calc-label {
+        font-size: 6px !important;
+      }
+
+      #consoleWrapper .meter-buttons-panel {
+        width: 4.7rem !important;
+        min-width: 4.7rem !important;
+        gap: 0.2rem !important;
+      }
+
+      #consoleWrapper .meter-buttons-panel > .grid {
+        gap: 0.2rem !important;
+      }
+
+      #consoleWrapper .meter-buttons-panel button {
+        padding: 0.18rem 0.2rem !important;
+        border-radius: 0.45rem !important;
+      }
+
+      #consoleWrapper .meter-buttons-panel button > div {
+        gap: 0.05rem !important;
+      }
+
+      #consoleWrapper .meter-buttons-panel button span {
+        font-size: 0.58rem !important;
+        line-height: 1 !important;
+      }
+
+      #consoleWrapper .meter-buttons-panel button > span {
+        margin-top: 0.05rem !important;
+        font-size: 0.42rem !important;
+        line-height: 1 !important;
+      }
+
+      #consoleWrapper .meter-buttons-panel button i {
+        font-size: 0.58rem !important;
+      }
+
+      /* GPS・住所エリア */
+      main > .grid.grid-cols-1.md\:grid-cols-2 {
+        margin-top: 0.2rem !important;
+        gap: 0.2rem !important;
+        height: 36px !important;
+        min-height: 36px !important;
+      }
+
+      main > .grid.grid-cols-1.md\:grid-cols-2 > div {
+        min-height: 0 !important;
+        height: 17px !important;
+        line-height: 1 !important;
+      }
+
+      #addressDisplay {
+        padding: 0.2rem !important;
+        font-size: 8px !important;
+      }
+
+      #gpsStatusBadge,
+      #simToggleBtn {
+        font-size: 7px !important;
+        padding: 0.08rem 0.3rem !important;
+      }
+
+      /* 案内欄は開閉UI自体を残しつつ高さを最小化 */
+      main > details {
+        margin-top: 0.2rem !important;
+        min-height: 22px !important;
+        height: 22px !important;
+        overflow: hidden !important;
+      }
+
+      main > details > summary {
+        height: 22px !important;
+        min-height: 22px !important;
+        padding: 0.2rem 0.45rem !important;
+        font-size: 8px !important;
+        line-height: 1 !important;
+      }
+
+      main > details[open] {
+        height: auto !important;
+        max-height: 55px !important;
+      }
+
+      main > details[open] > div {
+        padding: 0.25rem 0.45rem !important;
+        font-size: 7px !important;
+        line-height: 1.2 !important;
+      }
+
+      footer {
+        flex: 0 0 auto !important;
+        height: 18px !important;
+        min-height: 18px !important;
+        box-sizing: border-box !important;
+        padding: 0.2rem !important;
+        font-size: 7px !important;
+        line-height: 1 !important;
+        overflow: hidden !important;
+      }
+    }
+
+    /* 特に高さが低い横画面（スマホ） */
+    @media (orientation: landscape) and (max-width: 767px) and (max-height: 420px) {
+      main {
+        height: calc(100dvh - 38px) !important;
+        padding: 1px 3px !important;
+      }
+
+      #consoleWrapper {
+        height: 56% !important;
+      }
+
+      main > .grid.grid-cols-1.md\:grid-cols-2 {
+        height: 32px !important;
+        min-height: 32px !important;
+      }
+
+      main > .grid.grid-cols-1.md\:grid-cols-2 > div {
+        height: 15px !important;
+      }
+
+      main > details {
+        height: 19px !important;
+        min-height: 19px !important;
+      }
+
+      main > details > summary {
+        height: 19px !important;
+        min-height: 19px !important;
+        padding: 0.12rem 0.4rem !important;
+      }
+
+      footer {
+        height: 16px !important;
+        min-height: 16px !important;
+        padding: 0.12rem !important;
+      }
+    }
+
+</style>
+<style>
+/* 走行ルートビュー拡大 */
+#mapModal > div {
+  width: min(96vw, 1100px) !important;
+  max-width: 1100px !important;
+  max-height: 94dvh !important;
+}
+@media (orientation: landscape) {
+  #mapModal { padding: 4px !important; }
+  #mapModal > div {
+    width: 98vw !important;
+    max-width: 1200px !important;
+    max-height: 96dvh !important;
+  }
+}
 </style>
 </head>
 <body class="min-h-screen flex flex-col justify-between select-none overflow-x-hidden">
@@ -395,7 +734,13 @@
               <div class="text-[9px] text-slate-500">km</div>
             </div>
             <div class="bg-slate-900/90 border border-slate-800 rounded-lg p-1.5 sm:p-2">
-              <div class="text-[9px] uppercase text-slate-400">経過時間</div>
+              <div class="flex items-center justify-between gap-1">
+                <div class="text-[9px] uppercase text-slate-400">経過時間</div>
+                <div id="fareCalcIndicator" class="fare-calc-indicator" title="現在の運賃計算方式">
+                  <span id="fareCalcLamp" class="fare-calc-lamp off"></span>
+                  <span id="fareCalcLabel" class="fare-calc-label off">待機</span>
+                </div>
+              </div>
               <div id="timeDisplay" class="font-digital text-sm sm:text-lg font-bold text-slate-100 mt-0.5">00:00</div>
               <div class="text-[9px] text-slate-500">mm:ss</div>
             </div>
@@ -591,9 +936,17 @@
         <div class="bg-slate-950 p-3 rounded-lg border border-slate-800 text-xs space-y-1 font-mono">
           <div class="text-emerald-400 truncate"><span class="font-bold text-slate-400">出発地:</span> <span id="mapStartAddrText">-</span></div>
           <div class="text-amber-400 truncate"><span class="font-bold text-slate-400">到着地:</span> <span id="mapEndAddrText">-</span></div>
-          <div id="mapRouteDetails" class="grid grid-cols-2 gap-x-3 gap-y-1 pt-2 mt-2 border-t border-slate-800/70 text-[10px] text-slate-400"></div>
+          <div id="mapFareDisplay" class="flex items-center justify-between pt-2 mt-2 border-t border-cyan-500/20">
+            <span class="text-slate-400 text-[10px]">確定メーター運賃</span>
+            <span id="mapFareText" class="font-digital font-bold text-cyan-400 text-base">¥0</span>
+          </div>
+          <div id="mapFixedFareDisplay" class="flex items-center justify-between pt-1">
+            <span class="text-slate-500 text-[10px]">事前確定運賃</span>
+            <span id="mapFixedFareText" class="font-mono font-bold text-amber-300 text-xs">¥0</span>
+          </div>
+          <div id="mapRouteDetails" class="grid grid-cols-2 gap-x-3 gap-y-1 pt-2 mt-1 border-t border-slate-800/70 text-[10px] text-slate-400"></div>
         </div>
-        <div class="w-full h-72 sm:h-80 rounded-xl overflow-hidden border border-slate-800 relative bg-slate-950">
+        <div class="w-full h-[55vh] min-h-[300px] sm:h-[60vh] rounded-xl overflow-hidden border border-slate-800 relative bg-slate-950">
           <div id="routeMap" class="w-full h-full"></div>
         </div>
       </div>
@@ -662,8 +1015,6 @@
     let routeOccupiedMarker = null;
     let isFinalizingSettlement = false;
     let lastGPSAcceptedTimestamp = 0;
-    // GPSセッション識別子。前の乗車から遅れて届いた古いwatchPositionを無効化する。
-    let gpsSessionId = 0;
     const MAX_GPS_ACCURACY_METERS = 50;
     const MAX_GPS_SPEED_KMH = 180;
     // メーター専用：GPSとしては採用されても、メーター計算には速すぎる区間を加算しない。
@@ -826,23 +1177,6 @@
       return `緯度:${lat.toFixed(4)}, 経度:${lng.toFixed(4)}`;
     }
 
-    function resetRideGPSState() {
-      // 乗車ごとに前回のGPS基準点を完全に破棄する。
-      // これにより、新しい迎車開始時に前の乗車地点から距離が飛ぶのを防ぐ。
-      if (watchId !== null && navigator.geolocation) {
-        navigator.geolocation.clearWatch(watchId);
-      }
-      watchId = null;
-      gpsSessionId++;
-      lastPosition = null;
-      latestGPSPosition = null;
-      lastRoutedPosition = null;
-      lastRoutedTimestamp = 0;
-      lastGPSAcceptedTimestamp = 0;
-      speedKmh = 0;
-      isRoutingFetching = false;
-    }
-
     function setStatus(newState) {
       if (appState === newState) return;
 
@@ -861,13 +1195,6 @@
       // GPS取得が終わるまで空車ボタンをロックして、二重押しを防止
       if (isFinalizingSettlement) return;
       isFinalizingSettlement = true;
-      // 精算開始時点で旧watchPositionを無効化。
-      // 遅れて届く前回GPSが精算後の状態へ混入しないようにする。
-      if (watchId !== null && navigator.geolocation) {
-        navigator.geolocation.clearWatch(watchId);
-      }
-      watchId = null;
-      gpsSessionId++;
       // 「降車時間」は空車（精算）ボタンを押した瞬間を記録
       dropoffAt = new Date().toISOString();
 
@@ -970,10 +1297,8 @@
           pickupDistance = 0;
           startTime = new Date();
           routePoints = [];
-
-          // ★新しい乗車は必ず新しいGPS測位から開始。
-          // 前回乗車のlastPositionを迎車START地点として再利用しない。
-          resetRideGPSState();
+          lastRoutedPosition = lastPosition ? { ...lastPosition } : null;
+          if (lastPosition) addRoutePoint(lastPosition.lat, lastPosition.lng, true);
           startGPSWatch();
         }
       } else if (newState === 'OCCUPIED') {
@@ -1006,13 +1331,14 @@
           document.getElementById('dispatchFeeTag').innerText = "迎車料金込 ¥1,000";
           document.getElementById('dispatchFeeTag').classList.remove('hidden');
 
-          // 迎車→実車の境界点。ここから赤ルート＋メーター距離計算開始。
-          // 古いGPSを使わず、迎車中に最後に採用された新しいGPSだけを基準にする。
-          if (latestGPSPosition && lastGPSAcceptedTimestamp > 0) {
+          // 迎車→実車の境界点。ここから赤ルート＋メーター距離計算開始
+          if (latestGPSPosition) {
             lastPosition = { ...latestGPSPosition };
             lastRoutedPosition = { ...latestGPSPosition };
-            lastRoutedTimestamp = lastGPSAcceptedTimestamp;
             addRoutePoint(latestGPSPosition.lat, latestGPSPosition.lng, true);
+          } else if (lastPosition) {
+            lastRoutedPosition = { ...lastPosition };
+            addRoutePoint(lastPosition.lat, lastPosition.lng, true);
           }
 
           startOccupiedMeterSession();
@@ -1208,15 +1534,10 @@
         navigator.geolocation.clearWatch(watchId);
         watchId = null;
       }
-      // watchPositionの古いコールバックを無効化
-      gpsSessionId++;
       isRoutingFetching = false;
-      lastPosition = null;
-      latestGPSPosition = null;
       lastRoutedPosition = null;
       lastRoutedTimestamp = 0;
-      lastGPSAcceptedTimestamp = 0;
-      speedKmh = 0;
+      latestGPSPosition = null;
       if (simInterval !== null) {
         clearInterval(simInterval);
         simInterval = null;
@@ -1279,12 +1600,8 @@
       gpsBadge.innerText = "測位中...";
       gpsBadge.className = "text-cyan-400 bg-cyan-950/50 px-2 py-0.5 rounded-full border border-cyan-800/50 animate-pulse";
 
-      const sessionIdAtStart = ++gpsSessionId;
-
       watchId = navigator.geolocation.watchPosition(
         (position) => {
-          // 前回のwatchPositionから遅れて届いたGPSは完全に無視する。
-          if (sessionIdAtStart !== gpsSessionId) return;
           handleGPSPosition(position);
         },
         (error) => {
@@ -1515,6 +1832,33 @@
       }
     }
 
+    function updateFareCalcIndicator() {
+      const lamp = document.getElementById('fareCalcLamp');
+      const label = document.getElementById('fareCalcLabel');
+      if (!lamp || !label) return;
+
+      // 実車中だけ計算方式を表示。迎車・空車では消灯。
+      if (appState !== 'OCCUPIED' || !isOccupiedStarted) {
+        lamp.className = 'fare-calc-lamp off';
+        label.className = 'fare-calc-label off';
+        label.innerText = '待機';
+        return;
+      }
+
+      // 現在のメーター計算ロジックと同じ LOW_SPEED_THRESHOLD を使用。
+      // 10km/h以下：時間計算（赤点滅）
+      // 10km/h超：距離計算（青点灯）
+      if (speedKmh <= LOW_SPEED_THRESHOLD) {
+        lamp.className = 'fare-calc-lamp time';
+        label.className = 'fare-calc-label time';
+        label.innerText = '時間';
+      } else {
+        lamp.className = 'fare-calc-lamp distance';
+        label.className = 'fare-calc-label distance';
+        label.innerText = '距離';
+      }
+    }
+
     function updateDisplay() {
       document.getElementById('fareDisplay').innerText = `¥${currentFare.toLocaleString()}`;
       updateMeterProgressInfo();
@@ -1524,6 +1868,7 @@
       const secs = (accumulatedSeconds % 60).toString().padStart(2, '0');
       document.getElementById('timeDisplay').innerText = `${mins}:${secs}`;
       document.getElementById('speedDisplay').innerText = speedKmh.toFixed(1);
+      updateFareCalcIndicator();
     }
 
     function openHistoryModal() {
@@ -1848,18 +2193,33 @@
         [Number(lat1), Number(lng1)],
         [Number(lat2), Number(lng2)]
       ];
-      const savedPoints = Array.isArray(savedRoutePoints)
-        ? savedRoutePoints
-            .filter(p => p && Number.isFinite(Number(p.lat)) && Number.isFinite(Number(p.lng)))
-            .map(p => [Number(p.lat), Number(p.lng)])
+
+      const savedObjects = Array.isArray(savedRoutePoints)
+        ? savedRoutePoints.filter(p => p &&
+            Number.isFinite(Number(p.lat)) &&
+            Number.isFinite(Number(p.lng)))
         : [];
+
+      const savedPoints = savedObjects.map(p => [Number(p.lat), Number(p.lng)]);
       const points = savedPoints.length >= 2 ? savedPoints : fallbackPoints;
       const validPoints = points.filter(p => Number.isFinite(p[0]) && Number.isFinite(p[1]));
       if (validPoints.length < 2) return;
 
+      // 走行ルート画面にも金額を表示
+      const mapFareText = document.getElementById('mapFareText');
+      const mapFixedFareText = document.getElementById('mapFixedFareText');
+      if (mapFareText) {
+        mapFareText.innerText = `¥${Number(logData?.fare || 0).toLocaleString()}`;
+      }
+      if (mapFixedFareText) {
+        const fixedFare = Number(logData?.fixedFare || 0);
+        mapFixedFareText.innerText = fixedFare > 0 ? `¥${fixedFare.toLocaleString()}` : 'なし';
+      }
+
       const mapDetails = document.getElementById('mapRouteDetails');
       if (mapDetails) {
-        const m = logData ? getLogMetrics(logData) : { pickupKm:0, occupiedKm:0, totalKm:0, pickupSec:0, occupiedSec:0, rate:0 };
+        const m = logData ? getLogMetrics(logData) :
+          {pickupKm:0, occupiedKm:0, totalKm:0, pickupSec:0, occupiedSec:0, rate:0};
         mapDetails.innerHTML = `
           <span>迎車START: <b class="text-amber-300">${formatDateTime(logData?.engageStartAt)}</b></span>
           <span>迎車距離: <b class="text-amber-300">${m.pickupKm.toFixed(2)}km</b></span>
@@ -1873,81 +2233,118 @@
 
       document.getElementById('mapModal').classList.remove('hidden');
 
-      setTimeout(() => {
-        if (!routeMap) {
-          routeMap = L.map('routeMap', { zoomControl: true });
-          L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            maxZoom: 19,
-            attribution: '&copy; OpenStreetMap contributors'
-          }).addTo(routeMap);
-        }
-
-        if (routePolyline) routeMap.removeLayer(routePolyline);
-        if (routePolylineBlue) routeMap.removeLayer(routePolylineBlue);
-        if (routePolylineRed) routeMap.removeLayer(routePolylineRed);
-        routePolyline = null;
-        routePolylineBlue = null;
-        routePolylineRed = null;
-        if (routeStartMarker) routeMap.removeLayer(routeStartMarker);
-        if (routeEndMarker) routeMap.removeLayer(routeEndMarker);
-        if (routeOccupiedMarker) routeMap.removeLayer(routeOccupiedMarker);
-        routeStartMarker = null;
-        routeEndMarker = null;
-        routeOccupiedMarker = null;
-
-        // 迎車→実車は青、実車→空車清算は赤で表示
-        // 古い履歴（phaseがないデータ）は従来どおり青1本で表示する。
-        const hasPhase = savedRoutePoints.some(p => p && (p.phase === 'blue' || p.phase === 'red'));
-        if (hasPhase) {
-          const bluePoints = savedRoutePoints
-            .filter(p => p && p.phase === 'blue' && Number.isFinite(Number(p.lat)) && Number.isFinite(Number(p.lng)))
-            .map(p => [Number(p.lat), Number(p.lng)]);
-          const redPoints = savedRoutePoints
-            .filter(p => p && p.phase === 'red' && Number.isFinite(Number(p.lat)) && Number.isFinite(Number(p.lng)))
-            .map(p => [Number(p.lat), Number(p.lng)]);
-
-          // 各区間が1点しかない場合でも、表示できるよう境界点を補完
-          if (bluePoints.length === 1 && redPoints.length > 0) bluePoints.push(redPoints[0]);
-          if (redPoints.length === 1 && bluePoints.length > 0) redPoints.unshift(bluePoints[bluePoints.length - 1]);
-
-          routePolylineBlue = bluePoints.length >= 2
-            ? L.polyline(bluePoints, { color: '#2563eb', weight: 5, opacity: 0.9 }).addTo(routeMap)
-            : null;
-          routePolylineRed = redPoints.length >= 2
-            ? L.polyline(redPoints, { color: '#ef4444', weight: 5, opacity: 0.9 }).addTo(routeMap)
-            : null;
-
-          const boundsLayers = [routePolylineBlue, routePolylineRed].filter(Boolean);
-          if (boundsLayers.length > 0) {
-            const group = L.featureGroup(boundsLayers);
-            routeMap.fitBounds(group.getBounds(), { padding: [20, 20] });
-          } else {
-            routePolyline = L.polyline(validPoints, { weight: 5, opacity: 0.9 }).addTo(routeMap);
-            routeMap.fitBounds(routePolyline.getBounds(), { padding: [20, 20] });
+      requestAnimationFrame(() => {
+        setTimeout(() => {
+          if (!routeMap) {
+            routeMap = L.map('routeMap', { zoomControl: true });
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+              maxZoom: 19,
+              attribution: '&copy; OpenStreetMap contributors'
+            }).addTo(routeMap);
           }
-        } else {
-          routePolyline = L.polyline(validPoints, { weight: 5, opacity: 0.9 }).addTo(routeMap);
-          routeMap.fitBounds(routePolyline.getBounds(), { padding: [20, 20] });
-        }
 
-        // 3点ピン：迎車START=黄、実車START=赤、降車=緑
-        const engagePoint = savedRoutePoints.find(p => p && p.phase === 'blue');
-        const occupiedPoint = savedRoutePoints.find(p => p && p.phase === 'red');
-        const pickupMarkerIcon = L.divIcon({ className:'phase-pin-wrap', html:'<div style="width:18px;height:18px;border-radius:50%;background:#f59e0b;border:3px solid #fff;box-shadow:0 1px 5px rgba(0,0,0,.6)"></div>', iconSize:[18,18], iconAnchor:[9,9] });
-        const occupiedMarkerIcon = L.divIcon({ className:'phase-pin-wrap', html:'<div style="width:18px;height:18px;border-radius:50%;background:#ef4444;border:3px solid #fff;box-shadow:0 1px 5px rgba(0,0,0,.6)"></div>', iconSize:[18,18], iconAnchor:[9,9] });
-        const endMarkerIcon = L.divIcon({ className:'phase-pin-wrap', html:'<div style="width:18px;height:18px;border-radius:50%;background:#22c55e;border:3px solid #fff;box-shadow:0 1px 5px rgba(0,0,0,.6)"></div>', iconSize:[18,18], iconAnchor:[9,9] });
-        const engageLatLng = engagePoint ? [Number(engagePoint.lat), Number(engagePoint.lng)] : validPoints[0];
-        const occupiedLatLng = occupiedPoint ? [Number(occupiedPoint.lat), Number(occupiedPoint.lng)] : null;
-        const endLatLng = validPoints[validPoints.length - 1];
-        routeStartMarker = L.marker(engageLatLng, { icon: pickupMarkerIcon }).addTo(routeMap).bindPopup('迎車START');
-        if (occupiedLatLng && (occupiedLatLng[0] !== engageLatLng[0] || occupiedLatLng[1] !== engageLatLng[1])) {
-          routeOccupiedMarker = L.marker(occupiedLatLng, { icon: occupiedMarkerIcon }).addTo(routeMap).bindPopup('実車START');
-        }
-        routeEndMarker = L.marker(endLatLng, { icon: endMarkerIcon }).addTo(routeMap).bindPopup('降車');
-        setTimeout(() => routeMap.invalidateSize(), 100);
-      }, 50);
+          // 2回目以降も必ず現在のモーダルサイズで再計算
+          routeMap.invalidateSize({ pan: false });
+
+          if (routePolyline) routeMap.removeLayer(routePolyline);
+          if (routePolylineBlue) routeMap.removeLayer(routePolylineBlue);
+          if (routePolylineRed) routeMap.removeLayer(routePolylineRed);
+          routePolyline = routePolylineBlue = routePolylineRed = null;
+
+          if (routeStartMarker) routeMap.removeLayer(routeStartMarker);
+          if (routeEndMarker) routeMap.removeLayer(routeEndMarker);
+          if (routeOccupiedMarker) routeMap.removeLayer(routeOccupiedMarker);
+          routeStartMarker = routeEndMarker = routeOccupiedMarker = null;
+
+          const hasPhase = savedObjects.some(p => p.phase === 'blue' || p.phase === 'red');
+
+          if (hasPhase) {
+            const bluePoints = savedObjects.filter(p => p.phase === 'blue')
+              .map(p => [Number(p.lat), Number(p.lng)]);
+            const redPoints = savedObjects.filter(p => p.phase === 'red')
+              .map(p => [Number(p.lat), Number(p.lng)]);
+
+            if (bluePoints.length === 1 && redPoints.length > 0) bluePoints.push(redPoints[0]);
+            if (redPoints.length === 1 && bluePoints.length > 0) redPoints.unshift(bluePoints[bluePoints.length - 1]);
+
+            routePolylineBlue = bluePoints.length >= 2
+              ? L.polyline(bluePoints, {color:'#2563eb', weight:5, opacity:0.9}).addTo(routeMap)
+              : null;
+            routePolylineRed = redPoints.length >= 2
+              ? L.polyline(redPoints, {color:'#ef4444', weight:5, opacity:0.9}).addTo(routeMap)
+              : null;
+          } else {
+            routePolyline = L.polyline(validPoints, {
+              color:'#38bdf8', weight:5, opacity:0.9
+            }).addTo(routeMap);
+          }
+
+          const engagePoint = savedObjects.find(p => p.phase === 'blue');
+          const occupiedPoint = savedObjects.find(p => p.phase === 'red');
+
+          const pickupMarkerIcon = L.divIcon({
+            className:'phase-pin-wrap',
+            html:'<div style="width:18px;height:18px;border-radius:50%;background:#f59e0b;border:3px solid #fff;box-shadow:0 1px 5px rgba(0,0,0,.6)"></div>',
+            iconSize:[18,18], iconAnchor:[9,9]
+          });
+          const occupiedMarkerIcon = L.divIcon({
+            className:'phase-pin-wrap',
+            html:'<div style="width:18px;height:18px;border-radius:50%;background:#ef4444;border:3px solid #fff;box-shadow:0 1px 5px rgba(0,0,0,.6)"></div>',
+            iconSize:[18,18], iconAnchor:[9,9]
+          });
+          const endMarkerIcon = L.divIcon({
+            className:'phase-pin-wrap',
+            html:'<div style="width:18px;height:18px;border-radius:50%;background:#22c55e;border:3px solid #fff;box-shadow:0 1px 5px rgba(0,0,0,.6)"></div>',
+            iconSize:[18,18], iconAnchor:[9,9]
+          });
+
+          const engageLatLng = engagePoint
+            ? [Number(engagePoint.lat), Number(engagePoint.lng)]
+            : validPoints[0];
+          const occupiedLatLng = occupiedPoint
+            ? [Number(occupiedPoint.lat), Number(occupiedPoint.lng)]
+            : null;
+          const endLatLng = validPoints[validPoints.length - 1];
+
+          routeStartMarker = L.marker(engageLatLng, {icon:pickupMarkerIcon})
+            .addTo(routeMap).bindPopup('迎車START');
+
+          if (occupiedLatLng &&
+              (occupiedLatLng[0] !== engageLatLng[0] || occupiedLatLng[1] !== engageLatLng[1])) {
+            routeOccupiedMarker = L.marker(occupiedLatLng, {icon:occupiedMarkerIcon})
+              .addTo(routeMap).bindPopup('実車START');
+          }
+
+          routeEndMarker = L.marker(endLatLng, {icon:endMarkerIcon})
+            .addTo(routeMap).bindPopup('降車');
+
+          // ルート全体＋3点ピンを含めて毎回フィット。
+          // 前回のズーム状態を残さない。
+          const allBoundsPoints = validPoints.slice();
+          allBoundsPoints.push(engageLatLng);
+          if (occupiedLatLng) allBoundsPoints.push(occupiedLatLng);
+          allBoundsPoints.push(endLatLng);
+
+          const bounds = L.latLngBounds(allBoundsPoints);
+          routeMap.fitBounds(bounds, {
+            padding:[35,35],
+            maxZoom:16,
+            animate:false
+          });
+
+          // 2回目表示時の「どアップ」対策
+          routeMap.invalidateSize({pan:false});
+          setTimeout(() => {
+            routeMap.invalidateSize({pan:false});
+            routeMap.fitBounds(bounds, {
+              padding:[35,35],
+              maxZoom:16,
+              animate:false
+            });
+          }, 120);
+        }, 60);
+      });
     }
-
     function closeMapModal() {
       document.getElementById('mapModal').classList.add('hidden');
       if (routeMap) {
