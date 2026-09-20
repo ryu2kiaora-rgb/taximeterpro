@@ -645,6 +645,7 @@
     // 初乗り分を消化してから213m相当ごとに100円加算する。
     let meterProgressDistance = 0;
     let lastRoutedPosition = null;
+    let lastRoutedTimestamp = 0;
     let latestGPSPosition = null;
     let routePoints = [];
     // 運行フェーズ別の記録
@@ -661,8 +662,14 @@
     let routeOccupiedMarker = null;
     let isFinalizingSettlement = false;
     let lastGPSAcceptedTimestamp = 0;
+    // GPSセッション識別子。前の乗車から遅れて届いた古いwatchPositionを無効化する。
+    let gpsSessionId = 0;
     const MAX_GPS_ACCURACY_METERS = 50;
     const MAX_GPS_SPEED_KMH = 180;
+    // メーター専用：GPSとしては採用されても、メーター計算には速すぎる区間を加算しない。
+    // 高速道路走行は想定しつつ、GPS飛び込みによる運賃ジャンプを防ぐ。
+    const MAX_METER_SEGMENT_SPEED_KMH = 130;
+    const MAX_METER_SEGMENT_KM = 2.0;
 
     let startLocation = { lat: 35.8617, lng: 139.6455, address: '埼玉県さいたま市 (未測位)' };
     let endLocation = { lat: 35.8033, lng: 139.7133, address: '埼玉県川口市 (未測位)' };
@@ -819,6 +826,23 @@
       return `緯度:${lat.toFixed(4)}, 経度:${lng.toFixed(4)}`;
     }
 
+    function resetRideGPSState() {
+      // 乗車ごとに前回のGPS基準点を完全に破棄する。
+      // これにより、新しい迎車開始時に前の乗車地点から距離が飛ぶのを防ぐ。
+      if (watchId !== null && navigator.geolocation) {
+        navigator.geolocation.clearWatch(watchId);
+      }
+      watchId = null;
+      gpsSessionId++;
+      lastPosition = null;
+      latestGPSPosition = null;
+      lastRoutedPosition = null;
+      lastRoutedTimestamp = 0;
+      lastGPSAcceptedTimestamp = 0;
+      speedKmh = 0;
+      isRoutingFetching = false;
+    }
+
     function setStatus(newState) {
       if (appState === newState) return;
 
@@ -837,6 +861,13 @@
       // GPS取得が終わるまで空車ボタンをロックして、二重押しを防止
       if (isFinalizingSettlement) return;
       isFinalizingSettlement = true;
+      // 精算開始時点で旧watchPositionを無効化。
+      // 遅れて届く前回GPSが精算後の状態へ混入しないようにする。
+      if (watchId !== null && navigator.geolocation) {
+        navigator.geolocation.clearWatch(watchId);
+      }
+      watchId = null;
+      gpsSessionId++;
       // 「降車時間」は空車（精算）ボタンを押した瞬間を記録
       dropoffAt = new Date().toISOString();
 
@@ -939,8 +970,10 @@
           pickupDistance = 0;
           startTime = new Date();
           routePoints = [];
-          lastRoutedPosition = lastPosition ? { ...lastPosition } : null;
-          if (lastPosition) addRoutePoint(lastPosition.lat, lastPosition.lng, true);
+
+          // ★新しい乗車は必ず新しいGPS測位から開始。
+          // 前回乗車のlastPositionを迎車START地点として再利用しない。
+          resetRideGPSState();
           startGPSWatch();
         }
       } else if (newState === 'OCCUPIED') {
@@ -973,14 +1006,13 @@
           document.getElementById('dispatchFeeTag').innerText = "迎車料金込 ¥1,000";
           document.getElementById('dispatchFeeTag').classList.remove('hidden');
 
-          // 迎車→実車の境界点。ここから赤ルート＋メーター距離計算開始
-          if (latestGPSPosition) {
+          // 迎車→実車の境界点。ここから赤ルート＋メーター距離計算開始。
+          // 古いGPSを使わず、迎車中に最後に採用された新しいGPSだけを基準にする。
+          if (latestGPSPosition && lastGPSAcceptedTimestamp > 0) {
             lastPosition = { ...latestGPSPosition };
             lastRoutedPosition = { ...latestGPSPosition };
+            lastRoutedTimestamp = lastGPSAcceptedTimestamp;
             addRoutePoint(latestGPSPosition.lat, latestGPSPosition.lng, true);
-          } else if (lastPosition) {
-            lastRoutedPosition = { ...lastPosition };
-            addRoutePoint(lastPosition.lat, lastPosition.lng, true);
           }
 
           startOccupiedMeterSession();
@@ -1099,6 +1131,7 @@
       timeFareAdded = 0;
       meterProgressDistance = 0;
       lastRoutedPosition = null;
+      lastRoutedTimestamp = 0;
       latestGPSPosition = null;
       routePoints = [];
       startTime = null;
@@ -1175,9 +1208,15 @@
         navigator.geolocation.clearWatch(watchId);
         watchId = null;
       }
+      // watchPositionの古いコールバックを無効化
+      gpsSessionId++;
       isRoutingFetching = false;
-      lastRoutedPosition = null;
+      lastPosition = null;
       latestGPSPosition = null;
+      lastRoutedPosition = null;
+      lastRoutedTimestamp = 0;
+      lastGPSAcceptedTimestamp = 0;
+      speedKmh = 0;
       if (simInterval !== null) {
         clearInterval(simInterval);
         simInterval = null;
@@ -1240,8 +1279,12 @@
       gpsBadge.innerText = "測位中...";
       gpsBadge.className = "text-cyan-400 bg-cyan-950/50 px-2 py-0.5 rounded-full border border-cyan-800/50 animate-pulse";
 
+      const sessionIdAtStart = ++gpsSessionId;
+
       watchId = navigator.geolocation.watchPosition(
         (position) => {
+          // 前回のwatchPositionから遅れて届いたGPSは完全に無視する。
+          if (sessionIdAtStart !== gpsSessionId) return;
           handleGPSPosition(position);
         },
         (error) => {
@@ -1299,6 +1342,7 @@
 
       if (!lastRoutedPosition) {
         lastRoutedPosition = currentPos;
+        lastRoutedTimestamp = nowTs;
       }
 
       // 最初の測位を発着地点の基準にする
@@ -1328,27 +1372,54 @@
              (latestGPSPosition.lat !== lastRoutedPosition.lat || latestGPSPosition.lng !== lastRoutedPosition.lng)) {
         const from = { ...lastRoutedPosition };
         const to = { ...latestGPSPosition };
-        // OSRM待ちの途中で実車ボタンが押されても、リクエスト開始時のフェーズで計上する
         const phaseAtRequest = appState;
+        const toTimestamp = lastGPSAcceptedTimestamp || Date.now();
+        const elapsedSec = Math.max(1, (toTimestamp - (lastRoutedTimestamp || toTimestamp)) / 1000);
+        const straightLineKm = calculateHaversineDistance(from.lat, from.lng, to.lat, to.lng);
+        const apparentSpeedKmh = (straightLineKm / elapsedSec) * 3600;
 
         isRoutingFetching = true;
         try {
-          const routeDist = await fetchRouteDistance(from.lat, from.lng, to.lat, to.lng);
-          // OSRMが返した道路距離にも上限をかける。GPSジャンプを二重に防止。
-          if (routeDist < 3.0) {
-            if (phaseAtRequest === 'ENGAGED') {
-              pickupDistance += routeDist;
-            } else if (phaseAtRequest === 'OCCUPIED') {
-              totalDistance += routeDist;
-              if (speedKmh > LOW_SPEED_THRESHOLD) {
-                meterProgressDistance += routeDist;
+          // まず直線距離＋経過時間でメーター専用の異常判定。
+          // ここで除外しても「処理済み地点」は最新GPSへ進めるので、次回に巨大な距離が持ち越されない。
+          const meterGpsAnomaly =
+            phaseAtRequest === 'OCCUPIED' &&
+            (apparentSpeedKmh > MAX_METER_SEGMENT_SPEED_KMH || straightLineKm > MAX_METER_SEGMENT_KM);
+
+          if (meterGpsAnomaly) {
+            const gpsBadge = document.getElementById('gpsStatusBadge');
+            gpsBadge.innerText = `メーターGPS異常区間除外 (${Math.round(apparentSpeedKmh)}km/h)`;
+            gpsBadge.className = "text-amber-400 bg-amber-950/50 px-2 py-0.5 rounded-full border border-amber-800/50";
+          } else {
+            const routeDist = await fetchRouteDistance(from.lat, from.lng, to.lat, to.lng);
+
+            // OSRM道路距離にもメーター専用の安全弁を適用。
+            // 通常の短いGPS区間だけをメーターへ加算する。
+            const routeSpeedKmh = (routeDist / elapsedSec) * 3600;
+            const meterRouteAnomaly =
+              phaseAtRequest === 'OCCUPIED' &&
+              (routeDist >= 3.0 || routeDist > MAX_METER_SEGMENT_KM || routeSpeedKmh > MAX_METER_SEGMENT_SPEED_KMH);
+
+            if (meterRouteAnomaly) {
+              const gpsBadge = document.getElementById('gpsStatusBadge');
+              gpsBadge.innerText = `メーター距離異常区間除外 (${routeDist.toFixed(2)}km)`;
+              gpsBadge.className = "text-amber-400 bg-amber-950/50 px-2 py-0.5 rounded-full border border-amber-800/50";
+            } else if (routeDist < 3.0) {
+              if (phaseAtRequest === 'ENGAGED') {
+                pickupDistance += routeDist;
+              } else if (phaseAtRequest === 'OCCUPIED') {
+                totalDistance += routeDist;
+                if (speedKmh > LOW_SPEED_THRESHOLD) {
+                  meterProgressDistance += routeDist;
+                }
+                recalculateMeter();
               }
-              recalculateMeter();
             }
           }
         } finally {
-          // OSRM処理済み地点を更新。途中で届いた最新GPSは次のループで処理する
+          // 除外区間もここまで処理済みにする。次の正常GPSから再開する。
           lastRoutedPosition = to;
+          lastRoutedTimestamp = toTimestamp;
           isRoutingFetching = false;
         }
 
