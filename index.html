@@ -375,6 +375,53 @@
       50%, 100% { opacity: .18; }
     }
 
+
+    /* 履歴：日毎の折りたたみ */
+    #historyListContainer .history-day-group > summary::-webkit-details-marker {
+      display: none;
+    }
+    #historyListContainer .history-day-group > summary::marker {
+      display: none;
+    }
+    #historyListContainer .history-day-group > summary > span:last-child > i {
+      transition: transform 0.15s ease;
+    }
+    #historyListContainer .history-day-group[open] > summary > span:last-child > i {
+      transform: rotate(180deg);
+    }
+    #historyListContainer .history-day-group {
+      margin-bottom: 0.5rem;
+    }
+
+
+    /* 実メーター比較モーダル */
+    #meterCompareModal > div {
+      max-height: 94dvh;
+      overflow-y: auto;
+    }
+
+
+    /* 実メーター比較履歴 */
+    #meterCompareHistoryContainer::-webkit-scrollbar {
+      width: 4px;
+    }
+    #meterCompareHistoryContainer::-webkit-scrollbar-thumb {
+      background: #334155;
+      border-radius: 999px;
+    }
+
+    /* 走行・実車記録履歴から開く実メーター比較履歴 */
+    #meterCompareHistoryViewModal > div {
+      max-height: 88dvh;
+    }
+    #meterCompareHistoryViewContainer::-webkit-scrollbar {
+      width: 4px;
+    }
+    #meterCompareHistoryViewContainer::-webkit-scrollbar-thumb {
+      background: #334155;
+      border-radius: 999px;
+    }
+
 </style>
 <style>
 /* 走行ルートビュー拡大 */
@@ -522,8 +569,8 @@
           <span class="font-bold text-slate-300">OSRMルート検索 & GPS状態</span>
         </span>
         <div class="flex items-center space-x-2">
-          <button onclick="toggleSimMode()" id="simToggleBtn" class="text-[10px] bg-slate-800 hover:bg-slate-700 text-cyan-400 px-2 py-0.5 rounded border border-slate-700 transition">
-            シミュレータ切替
+          <button onclick="toggleMeterCompareMode()" id="meterCompareToggleBtn" class="text-[10px] bg-slate-800 hover:bg-slate-700 text-cyan-400 px-2 py-0.5 rounded border border-slate-700 transition">
+            実メーター比較
           </button>
           <span id="gpsStatusBadge" class="text-amber-400 bg-amber-950/50 px-2 py-0.5 rounded-full border border-amber-800/50">待機中</span>
         </div>
@@ -602,6 +649,83 @@
     </div>
   </div>
 
+  <!-- 実メーター比較モード Modal -->
+  <div id="meterCompareModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-amber-500/50 rounded-2xl max-w-sm w-full p-5 shadow-2xl space-y-4">
+      <div class="flex justify-between items-center border-b border-slate-800 pb-3">
+        <h4 class="font-bold text-sm text-amber-300 flex items-center space-x-2">
+          <i class="fa-solid fa-scale-balanced"></i><span>実メーター比較</span>
+        </h4>
+        <button onclick="closeMeterCompareModal()" class="text-slate-400 hover:text-slate-200 p-1">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <div class="bg-slate-950 p-3 rounded-lg border border-slate-800 space-y-1 text-xs">
+        <div class="flex justify-between">
+          <span class="text-slate-400">アプリ計算運賃</span>
+          <span id="compareAppFareText" class="font-digital font-bold text-cyan-400 text-base">¥0</span>
+        </div>
+        <div class="flex justify-between text-slate-500">
+          <span>走行距離</span><span id="compareDistanceText">0.00km</span>
+        </div>
+        <div class="flex justify-between text-slate-500">
+          <span>実車時間</span><span id="compareTimeText">0分0秒</span>
+        </div>
+      </div>
+
+      <div>
+        <label class="block font-semibold mb-1 text-amber-300 text-xs">実メーターの確定金額を入力</label>
+        <div class="relative">
+          <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400 font-bold">¥</span>
+          <input type="text" id="meterCompareFareInput" inputmode="none" readonly autocomplete="off"
+                 placeholder="例: 1200"
+                 class="w-full bg-slate-950 border border-amber-600/50 rounded-lg py-2 pl-8 pr-3 text-slate-100 font-digital text-lg focus:outline-none focus:border-amber-400">
+        </div>
+
+        <div class="mt-2 grid grid-cols-3 gap-1.5">
+          <button type="button" onclick="compareKeypadPress('1')" class="bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-100 font-bold py-2.5 rounded-lg border border-slate-700">1</button>
+          <button type="button" onclick="compareKeypadPress('2')" class="bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-100 font-bold py-2.5 rounded-lg border border-slate-700">2</button>
+          <button type="button" onclick="compareKeypadPress('3')" class="bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-100 font-bold py-2.5 rounded-lg border border-slate-700">3</button>
+          <button type="button" onclick="compareKeypadPress('4')" class="bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-100 font-bold py-2.5 rounded-lg border border-slate-700">4</button>
+          <button type="button" onclick="compareKeypadPress('5')" class="bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-100 font-bold py-2.5 rounded-lg border border-slate-700">5</button>
+          <button type="button" onclick="compareKeypadPress('6')" class="bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-100 font-bold py-2.5 rounded-lg border border-slate-700">6</button>
+          <button type="button" onclick="compareKeypadPress('7')" class="bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-100 font-bold py-2.5 rounded-lg border border-slate-700">7</button>
+          <button type="button" onclick="compareKeypadPress('8')" class="bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-100 font-bold py-2.5 rounded-lg border border-slate-700">8</button>
+          <button type="button" onclick="compareKeypadPress('9')" class="bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-100 font-bold py-2.5 rounded-lg border border-slate-700">9</button>
+          <button type="button" onclick="compareKeypadClear()" class="bg-slate-700 hover:bg-slate-600 active:scale-95 text-amber-300 font-bold py-2.5 rounded-lg border border-slate-600 text-xs">クリア</button>
+          <button type="button" onclick="compareKeypadPress('0')" class="bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-100 font-bold py-2.5 rounded-lg border border-slate-700">0</button>
+          <button type="button" onclick="compareKeypadBackspace()" class="bg-slate-700 hover:bg-slate-600 active:scale-95 text-cyan-300 font-bold py-2.5 rounded-lg border border-slate-600"><i class="fa-solid fa-delete-left"></i></button>
+        </div>
+      </div>
+
+      <div id="meterCompareResult" class="bg-slate-950/80 border border-slate-800 rounded-lg p-3 text-xs">
+        <span class="text-slate-500">実メーター運賃を入力すると誤差判定します。</span>
+      </div>
+
+      <div class="text-[10px] text-slate-500 leading-relaxed">
+        判定基準：差額 <b class="text-slate-300">±¥100以内</b> は「許容範囲内」、それを超える場合は「要確認」。
+        比較結果は通常の売上履歴とは分けて保存します。
+      </div>
+
+      <button onclick="finishMeterCompare()" class="w-full bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold py-2.5 rounded-xl text-xs transition shadow">
+        比較結果を保存して終了
+      </button>
+
+      <div class="border-t border-slate-800 pt-3">
+        <div class="flex justify-between items-center mb-2">
+          <div class="text-[11px] font-bold text-slate-300">
+            <i class="fa-solid fa-clock-rotate-left mr-1 text-cyan-400"></i>実メーター比較履歴
+          </div>
+          <button type="button" onclick="clearMeterCompareHistory()" class="text-[9px] text-slate-500 hover:text-red-400">
+            全削除
+          </button>
+        </div>
+        <div id="meterCompareHistoryContainer" class="space-y-2 max-h-52 overflow-y-auto pr-1"></div>
+      </div>
+    </div>
+  </div>
+
   <!-- History Modal -->
   <div id="historyModal" class="fixed inset-0 bg-black/75 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
     <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-lg w-full max-h-[85vh] flex flex-col shadow-2xl overflow-hidden">
@@ -633,6 +757,21 @@
       </div>
 
       <div id="todaySummaryBox" class="bg-slate-950/60 px-4 py-3 border-b border-slate-800"></div>
+
+      <!-- 実メーター比較履歴への入口 -->
+      <div class="px-4 py-2 border-b border-slate-800 bg-slate-950/40">
+        <button type="button" onclick="openMeterCompareHistoryView()"
+          class="w-full flex items-center justify-between bg-slate-900 hover:bg-slate-800 border border-slate-700 hover:border-cyan-700/60 rounded-lg px-3 py-2 transition">
+          <span class="flex items-center gap-2 text-[11px] font-bold text-cyan-300">
+            <i class="fa-solid fa-scale-balanced"></i>
+            <span>実メーター比較履歴を確認</span>
+          </span>
+          <span class="flex items-center gap-1.5 text-[9px] text-slate-500">
+            <span id="meterCompareHistoryCount">0件</span>
+            <i class="fa-solid fa-chevron-right text-slate-600"></i>
+          </span>
+        </button>
+      </div>
 
       <div id="historyListContainer" class="p-4 overflow-y-auto flex-1 space-y-3 divide-y divide-slate-800/50"></div>
       <div class="p-4 border-t border-slate-800 bg-slate-950 flex justify-between items-center">
@@ -714,8 +853,9 @@
     let isDispatchApplied = false;
     let isOccupiedStarted = false;
     let nightOverrideMode = 'AUTO';
-    let isSimulationMode = false;
-    let simInterval = null;
+    let isMeterCompareMode = false;
+    let meterCompareResult = null;
+    const METER_COMPARE_TOLERANCE_YEN = 100;
     let isRoutingFetching = false;
     let timeFareAdded = 0;
     // 初乗り1.027kmを「距離＋低速時間」で消化するためのメーター進行距離
@@ -740,6 +880,9 @@
     let routeOccupiedMarker = null;
     let isFinalizingSettlement = false;
     let lastGPSAcceptedTimestamp = 0;
+    // 運行ごとのGPS世代番号。前の運行から遅れて届いたGPS/OSRM結果を新しい運行へ混ぜない。
+    let gpsSessionId = 0;
+    let waitingForFreshRideGPS = false;
     const MAX_GPS_ACCURACY_METERS = 50;
     const MAX_GPS_SPEED_KMH = 180;
     // メーター専用：GPSとしては採用されても、メーター計算には速すぎる区間を加算しない。
@@ -811,6 +954,7 @@
         const hour = new Date().getHours();
         updateNightSurchargeVisual(hour >= 22 || hour < 5);
       }
+
       recalculateMeter();
     }
 
@@ -830,34 +974,360 @@
       }
     }
 
-    function toggleSimMode() {
-      isSimulationMode = !isSimulationMode;
-      const btn = document.getElementById('simToggleBtn');
-      const isRunning = appState !== 'VACANT';
+    function toggleMeterCompareMode() {
+      const btn = document.getElementById('meterCompareToggleBtn');
 
-      if (isSimulationMode) {
-        btn.innerText = "GPSモードへ切替";
+      // 運行中はモード切替をさせず、現在の運行を壊さない。
+      if (appState !== 'VACANT') {
+        showModal("実メーター比較", "比較モードの切替は空車時に行ってください。現在の運行はそのまま継続します。");
+        return;
+      }
+
+      isMeterCompareMode = !isMeterCompareMode;
+
+      if (isMeterCompareMode) {
+        btn.innerText = "比較モード ON";
         btn.className = "text-[10px] bg-amber-900/50 hover:bg-amber-800 text-amber-300 px-2 py-0.5 rounded border border-amber-700 transition";
-        document.getElementById('addressDisplay').innerText = "シミュレーションモード稼働中 (自動加算)";
-        document.getElementById('gpsStatusBadge').innerText = "シミュ";
+        document.getElementById('addressDisplay').innerText = "実メーター比較モード：迎車 → 実車 → 空車で比較します";
+        document.getElementById('gpsStatusBadge').innerText = "比較待機";
         document.getElementById('gpsStatusBadge').className = "text-amber-400 bg-amber-950/50 px-2 py-0.5 rounded-full border border-amber-800/50";
-
-        // GPS監視とシミュレーションを同時に動かさない
-        if (watchId !== null && navigator.geolocation) {
-          navigator.geolocation.clearWatch(watchId);
-          watchId = null;
-        }
-        if (isRunning) startSimulation();
       } else {
-        btn.innerText = "シミュレータ切替";
+        btn.innerText = "実メーター比較";
         btn.className = "text-[10px] bg-slate-800 hover:bg-slate-700 text-cyan-400 px-2 py-0.5 rounded border border-slate-700 transition";
-        if (simInterval !== null) {
-          clearInterval(simInterval);
-          simInterval = null;
-        }
-        if (isRunning) startGPSWatch();
+        document.getElementById('addressDisplay').innerText = "GPS信号をスキャン中... (発着地点住所の自動逆引き対応)";
+        document.getElementById('gpsStatusBadge').innerText = "待機中";
+        document.getElementById('gpsStatusBadge').className = "text-amber-400 bg-amber-950/50 px-2 py-0.5 rounded-full border border-amber-800/50";
       }
     }
+
+    function updateMeterComparePreview() {
+      const input = document.getElementById('meterCompareFareInput');
+      const result = document.getElementById('meterCompareResult');
+      if (!input || !result) return;
+
+      const actualFare = Number(input.value);
+      if (!Number.isFinite(actualFare) || actualFare <= 0) {
+        result.innerHTML = '<span class="text-slate-500">実メーター運賃を入力すると誤差判定します。</span>';
+        meterCompareResult = null;
+        return;
+      }
+
+      const appFare = Number(currentFare) || 0;
+      const diff = actualFare - appFare;
+      const absDiff = Math.abs(diff);
+      const errorRate = appFare > 0 ? (absDiff / appFare) * 100 : 0;
+
+      let judgment;
+      let judgmentClass;
+      if (absDiff === 0) {
+        judgment = '完全一致';
+        judgmentClass = 'text-emerald-400';
+      } else if (absDiff <= METER_COMPARE_TOLERANCE_YEN) {
+        judgment = `許容範囲内（±¥${METER_COMPARE_TOLERANCE_YEN.toLocaleString()}以内）`;
+        judgmentClass = 'text-amber-300';
+      } else {
+        judgment = '要確認';
+        judgmentClass = 'text-red-400';
+      }
+
+      const sign = diff > 0 ? '+' : '';
+      result.innerHTML = `
+        <div class="grid grid-cols-2 gap-x-3 gap-y-1">
+          <span class="text-slate-400">アプリ運賃</span>
+          <b class="text-cyan-400 text-right">¥${appFare.toLocaleString()}</b>
+          <span class="text-slate-400">実メーター</span>
+          <b class="text-white text-right">¥${actualFare.toLocaleString()}</b>
+          <span class="text-slate-400">差額（実−アプリ）</span>
+          <b class="${diff === 0 ? 'text-emerald-400' : diff > 0 ? 'text-red-400' : 'text-amber-300'} text-right">${sign}¥${diff.toLocaleString()}</b>
+          <span class="text-slate-400">誤差率</span>
+          <b class="text-slate-200 text-right">${errorRate.toFixed(2)}%</b>
+        </div>
+        <div class="mt-2 pt-2 border-t border-slate-800 text-center font-bold ${judgmentClass}">
+          判定：${judgment}
+        </div>
+      `;
+
+      meterCompareResult = {
+        appFare,
+        actualFare,
+        diff,
+        absDiff,
+        errorRate: Number(errorRate.toFixed(2)),
+        judgment
+      };
+    }
+
+    function compareKeypadPress(value) {
+      const input = document.getElementById('meterCompareFareInput');
+      if (!input) return;
+
+      let current = String(input.value || '');
+      if (current === '0') current = '';
+      if (current.length >= 7) return;
+
+      input.value = current + value;
+      updateMeterComparePreview();
+    }
+
+    function compareKeypadClear() {
+      const input = document.getElementById('meterCompareFareInput');
+      if (!input) return;
+      input.value = '';
+      updateMeterComparePreview();
+    }
+
+    function compareKeypadBackspace() {
+      const input = document.getElementById('meterCompareFareInput');
+      if (!input) return;
+      input.value = String(input.value || '').slice(0, -1);
+      updateMeterComparePreview();
+    }
+
+    function openMeterCompareModal() {
+      const input = document.getElementById('meterCompareFareInput');
+      if (!input) return;
+
+      input.value = '';
+      meterCompareResult = null;
+      document.getElementById('compareAppFareText').innerText = `¥${Number(currentFare).toLocaleString()}`;
+      document.getElementById('compareDistanceText').innerText = `${totalDistance.toFixed(2)}km`;
+      document.getElementById('compareTimeText').innerText = formatDuration(accumulatedSeconds);
+      updateMeterComparePreview();
+      renderMeterCompareHistory();
+      document.getElementById('meterCompareModal').classList.remove('hidden');
+    }
+
+    function closeMeterCompareModal() {
+      document.getElementById('meterCompareModal').classList.add('hidden');
+    }
+
+    function loadMeterCompareLogs() {
+      try {
+        const logs = JSON.parse(localStorage.getItem('taxi_meter_compare_logs') || '[]');
+        return Array.isArray(logs) ? logs : [];
+      } catch (e) {
+        return [];
+      }
+    }
+
+    function renderMeterCompareHistory(containerId = 'meterCompareHistoryContainer') {
+      const container = document.getElementById(containerId);
+      if (!container) return;
+
+      const logs = loadMeterCompareLogs();
+      updateMeterCompareHistoryEntryCount(logs.length);
+
+      if (logs.length === 0) {
+        container.innerHTML = `
+          <div class="text-center py-5 text-slate-500 text-xs">
+            <i class="fa-solid fa-scale-balanced mb-2 text-lg"></i>
+            <div>実メーター比較履歴はまだありません</div>
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = '';
+
+      logs.forEach((log, index) => {
+        const appFare = Number(log.appFare) || 0;
+        const actualFare = Number(log.actualFare) || 0;
+        const diff = Number(log.diff) || 0;
+        const errorRate = Number(log.errorRate) || 0;
+
+        let diffClass = 'text-slate-300';
+        if (diff > 0) diffClass = 'text-red-400';
+        if (diff < 0) diffClass = 'text-amber-300';
+
+        let judgmentClass = 'text-red-400';
+        if (log.judgment === '完全一致') judgmentClass = 'text-emerald-400';
+        else if (log.judgment === '許容範囲内（±¥100以内）') judgmentClass = 'text-amber-300';
+
+        const card = document.createElement('div');
+        card.className = 'bg-slate-900/70 border border-slate-800 rounded-lg p-3 space-y-2';
+
+        card.innerHTML = `
+          <div class="flex justify-between items-center">
+            <div class="text-[10px] text-slate-400">
+              <i class="fa-regular fa-clock mr-1"></i>${escapeHtml(String(log.date || '日時不明'))}
+            </div>
+            <button type="button"
+              onclick="deleteMeterCompareHistory(${Number(log.id)})"
+              class="text-slate-600 hover:text-red-400 p-1"
+              title="比較履歴を削除">
+              <i class="fa-solid fa-trash-can"></i>
+            </button>
+          </div>
+
+          <div class="grid grid-cols-2 gap-2">
+            <div class="bg-slate-950 rounded p-2">
+              <div class="text-[9px] text-slate-500">アプリ</div>
+              <div class="font-digital font-bold text-cyan-400">¥${appFare.toLocaleString()}</div>
+            </div>
+            <div class="bg-slate-950 rounded p-2">
+              <div class="text-[9px] text-slate-500">実メーター</div>
+              <div class="font-digital font-bold text-white">¥${actualFare.toLocaleString()}</div>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-3 gap-2 text-[10px] font-mono">
+            <div>
+              <span class="text-slate-500">差額</span>
+              <b class="${diffClass} block">${diff > 0 ? '+' : ''}¥${diff.toLocaleString()}</b>
+            </div>
+            <div>
+              <span class="text-slate-500">誤差率</span>
+              <b class="text-slate-200 block">${errorRate.toFixed(2)}%</b>
+            </div>
+            <div>
+              <span class="text-slate-500">走行</span>
+              <b class="text-slate-200 block">${Number(log.distance || 0).toFixed(2)}km</b>
+            </div>
+          </div>
+
+          <div class="flex justify-between items-center pt-1 border-t border-slate-800">
+            <span class="text-[9px] text-slate-500">実車時間 ${formatDuration(Number(log.timeSec) || 0)}</span>
+            <span class="text-[10px] font-bold ${judgmentClass}">
+              ${escapeHtml(String(log.judgment || '判定なし'))}
+            </span>
+          </div>
+        `;
+
+        container.appendChild(card);
+      });
+    }
+
+    function updateMeterCompareHistoryEntryCount(count) {
+      const countText = `${Number(count) || 0}件`;
+      const entry = document.getElementById('meterCompareHistoryCount');
+      const view = document.getElementById('meterCompareHistoryViewCount');
+      if (entry) entry.innerText = countText;
+      if (view) view.innerText = countText;
+    }
+
+    function openMeterCompareHistoryView() {
+      renderMeterCompareHistory('meterCompareHistoryViewContainer');
+      const modal = document.getElementById('meterCompareHistoryViewModal');
+      if (modal) modal.classList.remove('hidden');
+    }
+
+    function closeMeterCompareHistoryView() {
+      const modal = document.getElementById('meterCompareHistoryViewModal');
+      if (modal) modal.classList.add('hidden');
+    }
+
+    function deleteMeterCompareHistory(id) {
+      const logs = loadMeterCompareLogs();
+      const next = logs.filter(log => Number(log.id) !== Number(id));
+
+      try {
+        localStorage.setItem('taxi_meter_compare_logs', JSON.stringify(next));
+      } catch (e) {}
+
+      renderMeterCompareHistory();
+      if (!document.getElementById('meterCompareHistoryViewModal')?.classList.contains('hidden')) {
+        renderMeterCompareHistory('meterCompareHistoryViewContainer');
+      }
+    }
+
+    function clearMeterCompareHistory() {
+      const logs = loadMeterCompareLogs();
+      if (logs.length === 0) return;
+
+      if (!confirm('実メーター比較履歴をすべて削除しますか？')) return;
+
+      try {
+        localStorage.removeItem('taxi_meter_compare_logs');
+      } catch (e) {}
+
+      renderMeterCompareHistory();
+      if (!document.getElementById('meterCompareHistoryViewModal')?.classList.contains('hidden')) {
+        renderMeterCompareHistory('meterCompareHistoryViewContainer');
+      }
+    }
+
+    function finishMeterCompare() {
+      updateMeterComparePreview();
+
+      const input = document.getElementById('meterCompareFareInput');
+      const actualFare = Number(input?.value);
+      if (!Number.isFinite(actualFare) || actualFare <= 0 || !meterCompareResult) {
+        showModal("入力確認", "実メーターの金額を入力してください。");
+        return;
+      }
+
+      const result = meterCompareResult;
+      const compareRecord = {
+        id: Date.now(),
+        date: new Date().toLocaleString('ja-JP'),
+        appFare: result.appFare,
+        actualFare: result.actualFare,
+        diff: result.diff,
+        absDiff: result.absDiff,
+        errorRate: result.errorRate,
+        judgment: result.judgment,
+        distance: Number(totalDistance.toFixed(2)),
+        timeSec: accumulatedSeconds
+      };
+
+      let logs = loadMeterCompareLogs();
+      logs.unshift(compareRecord);
+      logs = logs.slice(0, 200);
+      try {
+        localStorage.setItem('taxi_meter_compare_logs', JSON.stringify(logs));
+      } catch (e) {}
+      renderMeterCompareHistory();
+      if (!document.getElementById('meterCompareHistoryViewModal')?.classList.contains('hidden')) {
+        renderMeterCompareHistory('meterCompareHistoryViewContainer');
+      }
+
+      closeMeterCompareModal();
+
+      const diffText = result.diff > 0
+        ? `実メーターが¥${result.diff.toLocaleString()}高い`
+        : result.diff < 0
+          ? `アプリが¥${Math.abs(result.diff).toLocaleString()}高い`
+          : '完全一致';
+
+      showSaveCompleteModal(
+        "実メーター比較完了",
+        `アプリ ¥${result.appFare.toLocaleString()} / 実メーター ¥${result.actualFare.toLocaleString()} / ${diffText} / 判定：${result.judgment}`
+      );
+
+      // 比較モードは1運行ごとのテストとして終了。
+      isMeterCompareMode = false;
+      const btn = document.getElementById('meterCompareToggleBtn');
+      if (btn) {
+        btn.innerText = "実メーター比較";
+        btn.className = "text-[10px] bg-slate-800 hover:bg-slate-700 text-cyan-400 px-2 py-0.5 rounded border border-slate-700 transition";
+      }
+
+      // 通常の精算履歴には混ぜず、比較データだけ別LocalStorageへ保存。
+      totalDistance = 0;
+      accumulatedSeconds = 0;
+      currentFare = 0;
+      timeFareAdded = 0;
+      meterProgressDistance = 0;
+      lastPosition = null;
+      latestGPSPosition = null;
+      lastRoutedPosition = null;
+      lastRoutedTimestamp = 0;
+      lastGPSAcceptedTimestamp = 0;
+      speedKmh = 0;
+      routePoints = [];
+      startTime = null;
+      engageStartAt = null;
+      occupiedStartAt = null;
+      dropoffAt = null;
+      pickupDistance = 0;
+      isDispatchApplied = false;
+      isOccupiedStarted = false;
+      document.getElementById('dispatchFeeTag').classList.add('hidden');
+
+      executeSetStatus('VACANT');
+      updateDisplay();
+    }
+
 
     function showModal(title, message, type = 'info') {
       document.getElementById('modalTitle').innerText = title;
@@ -900,6 +1370,32 @@
         }
       } catch (e) {}
       return `緯度:${lat.toFixed(4)}, 経度:${lng.toFixed(4)}`;
+    }
+
+    function prepareFreshRideGPS() {
+      // 前回の運行のGPS基準点を完全に破棄する。
+      // 特に lastPosition を残したまま迎車STARTすると、前回の降車地が
+      // 今回の迎車START地点としてルート履歴に入るため、ここで必ず切り離す。
+      if (watchId !== null && navigator.geolocation) {
+        navigator.geolocation.clearWatch(watchId);
+        watchId = null;
+      }
+
+      gpsSessionId++;
+      waitingForFreshRideGPS = true;
+      isRoutingFetching = false;
+
+      lastPosition = null;
+      latestGPSPosition = null;
+      lastRoutedPosition = null;
+      lastRoutedTimestamp = 0;
+      lastGPSAcceptedTimestamp = 0;
+      speedKmh = 0;
+
+      // 前回の発着地点を新しい運行へ流用しない。
+      startLocation = { lat: null, lng: null, address: '新規GPS測位中...' };
+      endLocation = { lat: null, lng: null, address: '新規GPS測位中...' };
+      routePoints = [];
     }
 
     function setStatus(newState) {
@@ -965,7 +1461,11 @@
         addRoutePoint(endLocation.lat, endLocation.lng, true);
       }
 
-      openSettlementModal();
+      if (isMeterCompareMode) {
+        openMeterCompareModal();
+      } else {
+        openSettlementModal();
+      }
 
       // モーダル表示後も、確定処理が終わるまでは二重操作を受け付けない
       if (vacantBtn) {
@@ -1009,11 +1509,10 @@
           document.getElementById('dispatchFeeTag').classList.remove('hidden');
           document.getElementById('dispatchFeeTag').innerText = "迎車料金 ¥500";
           
-          if (lastPosition) {
-            startLocation.lat = lastPosition.lat;
-            startLocation.lng = lastPosition.lng;
-            reverseGeocode(lastPosition.lat, lastPosition.lng).then(addr => { startLocation.address = addr; });
-          }
+          // 新しい運行なので、前回の降車地などをGPS基準点として絶対に使わない。
+          // 最初の新規GPSが取得されるまで、迎車STARTのピンも作らない。
+          prepareFreshRideGPS();
+
           // 迎車中はGPS監視と青ルート記録だけ開始。
           // メーター距離・時間計算は実車ボタンを押すまで開始しない。
           engageStartAt = new Date().toISOString();
@@ -1021,9 +1520,6 @@
           dropoffAt = null;
           pickupDistance = 0;
           startTime = new Date();
-          routePoints = [];
-          lastRoutedPosition = lastPosition ? { ...lastPosition } : null;
-          if (lastPosition) addRoutePoint(lastPosition.lat, lastPosition.lng, true);
           startGPSWatch();
         }
       } else if (newState === 'OCCUPIED') {
@@ -1038,11 +1534,9 @@
           document.getElementById('dispatchFeeTag').classList.add('hidden');
           currentFare = BASE_FARE; // 500 yen initial fare
           
-          if (lastPosition) {
-            startLocation.lat = lastPosition.lat;
-            startLocation.lng = lastPosition.lng;
-            reverseGeocode(lastPosition.lat, lastPosition.lng).then(addr => { startLocation.address = addr; });
-          }
+          // 空車から直接実車にした場合も、前回運行のGPSを使わず
+          // 新しいGPSを1点目としてメーターを開始する。
+          prepareFreshRideGPS();
           startMeterSession();
         } else if (oldState === 'ENGAGED') {
           // ★実車ボタンを押した瞬間をメーターSTARTにする
@@ -1181,9 +1675,12 @@
       currentFare = 0;
       timeFareAdded = 0;
       meterProgressDistance = 0;
+      lastPosition = null;
+      latestGPSPosition = null;
       lastRoutedPosition = null;
       lastRoutedTimestamp = 0;
-      latestGPSPosition = null;
+      lastGPSAcceptedTimestamp = 0;
+      speedKmh = 0;
       routePoints = [];
       startTime = null;
       engageStartAt = null;
@@ -1202,11 +1699,7 @@
       // 実車開始時専用。迎車中に積算した距離・時間はメーターに持ち込まない。
       startTime = new Date();
 
-      if (isSimulationMode) {
-        startSimulation();
-      } else {
-        startGPSWatch();
-      }
+      startGPSWatch();
 
       if (timerInterval) clearInterval(timerInterval);
       timerInterval = setInterval(() => {
@@ -1231,11 +1724,7 @@
         if (lastPosition) addRoutePoint(lastPosition.lat, lastPosition.lng, true);
       }
       
-      if (isSimulationMode) {
-        startSimulation();
-      } else {
-        startGPSWatch();
-      }
+      startGPSWatch();
 
       if (timerInterval) clearInterval(timerInterval);
       timerInterval = setInterval(() => {
@@ -1259,14 +1748,16 @@
         navigator.geolocation.clearWatch(watchId);
         watchId = null;
       }
+      // watchPositionの遅延コールバックと、進行中OSRMを次の運行へ持ち込まない。
+      gpsSessionId++;
+      waitingForFreshRideGPS = false;
       isRoutingFetching = false;
+      lastPosition = null;
       lastRoutedPosition = null;
       lastRoutedTimestamp = 0;
       latestGPSPosition = null;
-      if (simInterval !== null) {
-        clearInterval(simInterval);
-        simInterval = null;
-      }
+      lastGPSAcceptedTimestamp = 0;
+      speedKmh = 0;
       if (timerInterval !== null) {
         clearInterval(timerInterval);
         timerInterval = null;
@@ -1316,23 +1807,25 @@
 
       if (!navigator.geolocation) {
         gpsBadge.innerText = "GPS非対応";
-        document.getElementById('addressDisplay').innerText = "GPS非対応のためシミュレータに切替";
-        isSimulationMode = true;
-        startSimulation();
+        gpsBadge.className = "text-red-400 bg-red-950/50 px-2 py-0.5 rounded-full border border-red-800/50";
+        document.getElementById('addressDisplay').innerText = "この端末ではGPSを利用できません。実走行モードを開始できません。";
         return;
       }
 
-      gpsBadge.innerText = "測位中...";
+      gpsBadge.innerText = waitingForFreshRideGPS ? "新規GPS測位中..." : "測位中...";
       gpsBadge.className = "text-cyan-400 bg-cyan-950/50 px-2 py-0.5 rounded-full border border-cyan-800/50 animate-pulse";
 
+      const sessionAtStart = gpsSessionId;
       watchId = navigator.geolocation.watchPosition(
         (position) => {
+          // 前回watchの遅延コールバックを破棄する。
+          if (sessionAtStart !== gpsSessionId) return;
           handleGPSPosition(position);
         },
         (error) => {
           gpsBadge.innerText = "GPSエラー";
           gpsBadge.className = "text-red-400 bg-red-950/50 px-2 py-0.5 rounded-full border border-red-800/50";
-          document.getElementById('addressDisplay').innerText = "GPS信号を取得できません。シミュレータは手動で切替できます。";
+          document.getElementById('addressDisplay').innerText = "GPS信号を取得できません。位置情報の許可とGPS状態を確認してください。";
           // 一時的なGPSエラーで実走行をシミュレーションに切り替えない
         },
         { enableHighAccuracy: true, maximumAge: 0, timeout: 10000 }
@@ -1377,6 +1870,31 @@
       latestGPSPosition = currentPos;
       lastGPSAcceptedTimestamp = nowTs;
 
+      // 新規運行の最初のGPSだけを「今回の運行の基準点」とする。
+      // ここで前回降車地が混ざる余地をなくす。
+      if (waitingForFreshRideGPS) {
+        waitingForFreshRideGPS = false;
+        lastRoutedPosition = { ...currentPos };
+        lastRoutedTimestamp = nowTs;
+        routePoints = [];
+        addRoutePoint(lat, lng, true);
+
+        startLocation.lat = lat;
+        startLocation.lng = lng;
+        endLocation.lat = lat;
+        endLocation.lng = lng;
+        reverseGeocode(lat, lng).then(addr => {
+          // 新しい運行のGPSセッションが継続している場合だけ住所を反映。
+          if (!waitingForFreshRideGPS) {
+            startLocation.address = addr;
+          }
+        });
+
+        document.getElementById('addressDisplay').innerText = `緯度: ${lat.toFixed(5)}, 経度: ${lng.toFixed(5)} (新規運行GPS捕捉)`;
+        updateDisplay();
+        return;
+      }
+
       // 迎車中もGPS軌跡は保存する。ただしメーター距離は増やさない。
       if (startTime && (appState === 'OCCUPIED' || appState === 'ENGAGED')) {
         addRoutePoint(lat, lng);
@@ -1415,6 +1933,7 @@
         const from = { ...lastRoutedPosition };
         const to = { ...latestGPSPosition };
         const phaseAtRequest = appState;
+        const sessionAtRequest = gpsSessionId;
         const toTimestamp = lastGPSAcceptedTimestamp || Date.now();
         const elapsedSec = Math.max(1, (toTimestamp - (lastRoutedTimestamp || toTimestamp)) / 1000);
         const straightLineKm = calculateHaversineDistance(from.lat, from.lng, to.lat, to.lng);
@@ -1422,6 +1941,9 @@
 
         isRoutingFetching = true;
         try {
+          // 新しい運行が始まっていたら、このOSRM結果は前運行のものなので破棄。
+          if (sessionAtRequest !== gpsSessionId) break;
+
           // まず直線距離＋経過時間でメーター専用の異常判定。
           // ここで除外しても「処理済み地点」は最新GPSへ進めるので、次回に巨大な距離が持ち越されない。
           const meterGpsAnomaly =
@@ -1459,35 +1981,19 @@
             }
           }
         } finally {
-          // 除外区間もここまで処理済みにする。次の正常GPSから再開する。
-          lastRoutedPosition = to;
-          lastRoutedTimestamp = toTimestamp;
-          isRoutingFetching = false;
+          // 同じ運行の結果だけを基準点へ反映。
+          // 運行が切り替わっていたら前運行のGPSを新運行へ持ち込まない。
+          if (sessionAtRequest === gpsSessionId) {
+            lastRoutedPosition = to;
+            lastRoutedTimestamp = toTimestamp;
+            isRoutingFetching = false;
+          }
         }
 
         if (appState !== 'OCCUPIED' && appState !== 'ENGAGED') break;
       }
     }
 
-    function startSimulation() {
-      if (simInterval) clearInterval(simInterval);
-      simInterval = setInterval(() => {
-        if (appState === 'OCCUPIED' || appState === 'ENGAGED') {
-          speedKmh = 25.0;
-          endLocation.lat += 0.0005;
-          endLocation.lng += 0.0005;
-          addRoutePoint(endLocation.lat, endLocation.lng);
-          if (appState === 'ENGAGED') {
-            pickupDistance += 0.05;
-          } else {
-            totalDistance += 0.05;
-            meterProgressDistance += 0.05;
-            recalculateMeter();
-          }
-          updateDisplay();
-        }
-      }, 3000);
-    }
 
     function recalculateMeter() {
       if (!isOccupiedStarted) {
@@ -1687,6 +2193,7 @@
     function renderHistoryList() {
       const container = document.getElementById('historyListContainer');
       container.innerHTML = '';
+      updateMeterCompareHistoryEntryCount(loadMeterCompareLogs().length);
       renderTodaySummary();
 
       let sumFare = 0;
@@ -1702,10 +2209,10 @@
       }
 
       rideLogs.forEach((log) => {
-        sumFare += log.fare;
-        if (log.fixedFare > 0) {
-          sumFixed += log.fixedFare;
-          sumDiff += (log.fixedFare - log.fare);
+        sumFare += Number(log.fare) || 0;
+        if (Number(log.fixedFare) > 0) {
+          sumFixed += Number(log.fixedFare) || 0;
+          sumDiff += Number(log.fixedFare - log.fare) || 0;
         }
       });
 
@@ -1715,68 +2222,106 @@
       diffEl.innerText = `${sumDiff >= 0 ? '+' : ''}¥${sumDiff.toLocaleString()}`;
       diffEl.className = `font-digital font-bold text-sm sm:text-base ${sumDiff >= 0 ? 'text-amber-400' : 'text-cyan-400'}`;
 
-      const sortedLogs = [...rideLogs].sort((a, b) => b.id - a.id);
-      const groups = [];
-      
-      sortedLogs.forEach(log => {
-        const logTime = log.id;
-        let placed = false;
-        for (let g of groups) {
-          if (Math.abs(logTime - g.baseTime) <= 20 * 3600 * 1000) {
-            g.logs.push(log);
-            placed = true;
-            break;
-          }
-        }
-        if (!placed) {
-          groups.push({
-            baseTime: logTime,
-            logs: [log]
-          });
-        }
+      // 履歴は「日付ごと」にまとめる。
+      // 旧版の「20時間以内なら同じグループ」という判定は使わず、
+      // その運行の開始・降車日時からローカル日付を決める。
+      const getLogDateKey = (log) => {
+        const src = log.dropoffAt || log.engageStartAt || log.occupiedStartAt || log.id;
+        const d = new Date(src);
+        if (Number.isNaN(d.getTime())) return 'unknown';
+        return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+      };
+
+      const getTodayKey = () => {
+        const d = new Date();
+        return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+      };
+
+      const todayKey = getTodayKey();
+      const sortedLogs = [...rideLogs].sort((a, b) => {
+        const da = new Date(a.dropoffAt || a.engageStartAt || a.occupiedStartAt || a.id).getTime();
+        const db = new Date(b.dropoffAt || b.engageStartAt || b.occupiedStartAt || b.id).getTime();
+        return db - da;
       });
 
-      groups.forEach((group) => {
+      const grouped = new Map();
+
+      sortedLogs.forEach(log => {
+        const key = getLogDateKey(log);
+        if (!grouped.has(key)) grouped.set(key, []);
+        grouped.get(key).push(log);
+      });
+
+      const groupKeys = [...grouped.keys()].sort((a, b) => {
+        if (a === 'unknown') return 1;
+        if (b === 'unknown') return -1;
+        return b.localeCompare(a);
+      });
+
+      groupKeys.forEach((dateKey) => {
+        const logs = grouped.get(dateKey);
+
         let groupFare = 0;
         let groupFixed = 0;
 
-        group.logs.forEach(log => {
-          groupFare += log.fare;
-          if (log.fixedFare > 0) {
-            groupFixed += log.fixedFare;
-          }
+        logs.forEach(log => {
+          groupFare += Number(log.fare) || 0;
+          groupFixed += Number(log.fixedFare) || 0;
         });
 
-        const groupHeaderDate = new Date(group.baseTime).toLocaleDateString('ja-JP', { month: 'numeric', day: 'numeric', weekday: 'short' });
-        
-        const groupWrapper = document.createElement('div');
-        groupWrapper.className = "space-y-2 pb-3 border-b border-slate-800/80 last:border-0";
-        
-        const groupHeader = document.createElement('div');
-        groupHeader.className = "bg-slate-950 px-3 py-1.5 rounded-lg border border-slate-800/80 flex justify-between items-center text-[11px] font-mono text-cyan-400";
-        groupHeader.innerHTML = `
-          <span class="font-bold"><i class="fa-solid fa-calendar-day mr-1"></i> 運行日グループ (${groupHeaderDate} 起算 20h)</span>
-          <span class="text-slate-300">計: ¥${groupFare.toLocaleString()} (確定: ¥${groupFixed.toLocaleString()})</span>
+        let groupHeaderDate = '日付不明';
+        if (dateKey !== 'unknown') {
+          const [y, m, d] = dateKey.split('-').map(Number);
+          const groupDate = new Date(y, m - 1, d);
+          groupHeaderDate = groupDate.toLocaleDateString('ja-JP', {
+            year: 'numeric',
+            month: 'numeric',
+            day: 'numeric',
+            weekday: 'short'
+          });
+        }
+
+        const isToday = dateKey === todayKey;
+
+        // 当日は開いた状態、前日以前は閉じた状態。
+        // <details> の open 属性で初期状態を制御する。
+        const groupWrapper = document.createElement('details');
+        groupWrapper.className = "history-day-group rounded-lg border border-slate-800/80 overflow-hidden";
+        if (isToday) groupWrapper.open = true;
+
+        const summary = document.createElement('summary');
+        summary.className = "list-none cursor-pointer select-none bg-slate-950 px-3 py-2 flex justify-between items-center text-[11px] font-mono text-cyan-400 hover:bg-slate-900 transition";
+        summary.innerHTML = `
+          <span class="font-bold flex items-center gap-1.5">
+            <i class="fa-solid fa-calendar-day"></i>
+            <span>${isToday ? '今日' : ''}${groupHeaderDate}</span>
+            <span class="text-slate-500">(${logs.length}件)</span>
+          </span>
+          <span class="flex items-center gap-2">
+            <span class="text-slate-300">計: ¥${groupFare.toLocaleString()}</span>
+            <span class="text-amber-300">確定: ¥${groupFixed.toLocaleString()}</span>
+            <i class="fa-solid fa-chevron-down text-slate-500 text-[9px] transition-transform"></i>
+          </span>
         `;
-        groupWrapper.appendChild(groupHeader);
+        groupWrapper.appendChild(summary);
 
         const innerList = document.createElement('div');
-        innerList.className = "space-y-2 pl-2";
+        innerList.className = "space-y-2 p-2 bg-slate-950/30";
 
-        group.logs.forEach((log) => {
-          const mins = Math.floor(log.timeSec / 60);
-          const secs = log.timeSec % 60;
+        logs.forEach((log) => {
+          const mins = Math.floor((Number(log.timeSec) || 0) / 60);
+          const secs = (Number(log.timeSec) || 0) % 60;
           const timeStr = `${mins}分${secs}秒`;
 
           let diffColor = "text-slate-400";
           let diffText = "比較なし";
-          if (log.fixedFare > 0) {
-            if (log.diff > 0) {
+          if (Number(log.fixedFare) > 0) {
+            if (Number(log.diff) > 0) {
               diffColor = "text-amber-400";
-              diffText = `ライドシェア+¥${log.diff.toLocaleString()}`;
-            } else if (log.diff < 0) {
+              diffText = `ライドシェア+¥${Number(log.diff).toLocaleString()}`;
+            } else if (Number(log.diff) < 0) {
               diffColor = "text-cyan-400";
-              diffText = `メーター+¥${Math.abs(log.diff).toLocaleString()}`;
+              diffText = `メーター+¥${Math.abs(Number(log.diff)).toLocaleString()}`;
             } else {
               diffText = `差額なし`;
             }
@@ -1793,14 +2338,14 @@
             <div class="flex justify-between items-center text-slate-400">
               <span class="flex items-center space-x-1.5"><i class="fa-regular fa-clock"></i><span>${log.date}</span></span>
               <div class="flex items-center space-x-3">
-                <span class="font-mono text-cyan-400 font-bold text-sm">¥${log.fare.toLocaleString()}</span>
+                <span class="font-mono text-cyan-400 font-bold text-sm">¥${Number(log.fare).toLocaleString()}</span>
                 <button onclick="deleteLogItem(${log.id})" class="text-slate-500 hover:text-red-400 p-1 transition" title="この履歴を削除">
                   <i class="fa-solid fa-trash-can"></i>
                 </button>
               </div>
             </div>
             <div class="flex items-center space-x-1">${tags.join(' ')}</div>
-            
+
             <div onclick="openRouteMapFromHistory(${Number(log.id)})" class="bg-slate-950/70 hover:bg-slate-800/80 border border-slate-800 rounded-lg p-2.5 transition cursor-pointer space-y-1 group-hover:border-cyan-500/40">
               <div class="flex items-center space-x-1.5 truncate text-emerald-400">
                 <i class="fa-solid fa-location-dot text-[10px]"></i>
@@ -1822,7 +2367,7 @@
               </div>
               <div class="flex justify-between pt-1 text-[11px] text-slate-400 font-mono">
                 <span>メーター: ${log.distance}km / ${timeStr}</span>
-                <span class="${diffColor}">事前確定: ¥${log.fixedFare > 0 ? log.fixedFare.toLocaleString() : '0'} (${diffText})</span>
+                <span class="${diffColor}">事前確定: ¥${Number(log.fixedFare) > 0 ? Number(log.fixedFare).toLocaleString() : '0'} (${diffText})</span>
               </div>
               <div class="text-[10px] text-cyan-400/80 text-right pt-0.5"><i class="fa-solid fa-map"></i> クリックして地図ルート表示 →</div>
             </div>
@@ -2078,5 +2623,30 @@
     }
 
   </script>
+  <!-- 走行・実車記録履歴から開く実メーター比較履歴 -->
+  <div id="meterCompareHistoryViewModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-[60] hidden flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-lg w-full shadow-2xl overflow-hidden flex flex-col">
+      <div class="p-4 border-b border-slate-800 flex justify-between items-center bg-slate-950">
+        <h3 class="font-bold text-sm text-slate-200 flex items-center gap-2">
+          <i class="fa-solid fa-scale-balanced text-cyan-400"></i>
+          <span>実メーター比較履歴</span>
+        </h3>
+        <button type="button" onclick="closeMeterCompareHistoryView()" class="text-slate-400 hover:text-slate-200 p-1 rounded-lg">
+          <i class="fa-solid fa-xmark text-lg"></i>
+        </button>
+      </div>
+      <div class="px-4 py-2 border-b border-slate-800 bg-slate-950/60 flex items-center justify-between">
+        <span class="text-[10px] text-slate-400">保存された比較結果</span>
+        <span id="meterCompareHistoryViewCount" class="text-[10px] font-mono text-cyan-400">0件</span>
+      </div>
+      <div id="meterCompareHistoryViewContainer" class="p-4 overflow-y-auto flex-1 space-y-2 max-h-[68vh]"></div>
+      <div class="p-3 border-t border-slate-800 bg-slate-950 flex justify-end">
+        <button type="button" onclick="closeMeterCompareHistoryView()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs px-4 py-2 rounded-lg font-medium transition">
+          閉じる
+        </button>
+      </div>
+    </div>
+  </div>
+
 </body>
 </html>
