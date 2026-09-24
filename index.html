@@ -1246,6 +1246,142 @@
       }
     }
 
+
+    function closeMeterCompareAnalysis() {
+      const modal = document.getElementById('meterCompareAnalysisModal');
+      if (modal) modal.classList.add('hidden');
+    }
+
+    function findRideRecordForCompare(compareLog) {
+      if (!compareLog || !Array.isArray(rideLogs)) return null;
+      const targetTime = Date.parse(String(compareLog.date || '').replace(/\\//g, '-'));
+      const targetDistance = Number(compareLog.distance);
+      const targetTimeSec = Number(compareLog.timeSec);
+      let best = null, bestScore = Infinity;
+
+      rideLogs.forEach(log => {
+        if (!log) return;
+        const d = Number(log.occupiedDistance ?? log.distance);
+        const t = Number(log.occupiedSeconds ?? log.timeSec);
+        const logTime = Date.parse(String(log.date || '').replace(/\\//g, '-'));
+        let score = 0;
+        score += Number.isFinite(targetDistance) && Number.isFinite(d)
+          ? Math.min(Math.abs(targetDistance - d) * 100, 500) : 200;
+        score += Number.isFinite(targetTimeSec) && Number.isFinite(t)
+          ? Math.min(Math.abs(targetTimeSec - t) / 10, 300) : 100;
+        score += Number.isFinite(targetTime) && Number.isFinite(logTime)
+          ? Math.min(Math.abs(targetTime - logTime) / 60000, 300) : 100;
+        if (score < bestScore) { bestScore = score; best = log; }
+      });
+      return bestScore <= 180 ? best : null;
+    }
+
+    function formatAnalysisYen(value) {
+      const n = Number(value) || 0;
+      return `${n >= 0 ? '+' : '-'}¥${Math.abs(Math.round(n)).toLocaleString()}`;
+    }
+
+    function openMeterCompareAnalysis(id) {
+      const logs = loadMeterCompareLogs();
+      const compareLog = logs.find(log => Number(log.id) === Number(id));
+      if (!compareLog) {
+        showModal('分析できません', 'この比較履歴が見つかりません。');
+        return;
+      }
+
+      const ride = findRideRecordForCompare(compareLog);
+      const appFare = Number(compareLog.appFare) || 0;
+      const actualFare = Number(compareLog.actualFare) || 0;
+      const diff = actualFare - appFare;
+      const distance = Number(compareLog.distance) || 0;
+      const timeSec = Number(compareLog.timeSec) || 0;
+      const rows = [];
+
+      const addRow = (label, value, note, cls='text-slate-200') => {
+        rows.push(`
+          <div class="rounded-xl bg-slate-950/60 border border-slate-800 p-3">
+            <div class="flex items-start justify-between gap-3">
+              <span class="text-[10px] text-slate-500">${label}</span>
+              <b class="text-xs ${cls} text-right">${value}</b>
+            </div>
+            ${note ? `<div class="text-[10px] text-slate-500 leading-relaxed mt-1">${note}</div>` : ''}
+          </div>`);
+      };
+
+      addRow('差額', formatAnalysisYen(diff),
+        diff === 0 ? '実メーターとアプリの金額は一致しています。' :
+        diff > 0 ? '実メーターの方がアプリより高い結果です。' :
+        '実メーターの方がアプリより安い結果です。',
+        diff === 0 ? 'text-emerald-400' : diff > 0 ? 'text-red-400' : 'text-amber-300');
+
+      addRow('走行条件', `${distance.toFixed(2)} km / ${formatDuration(timeSec)}`,
+        '比較履歴に保存されている実車距離・実車時間です。');
+
+      if (ride) {
+        const night = ride.isNight === true;
+        const dispatch = ride.isDispatch === true;
+        const pickupDistance = Number(ride.pickupDistance) || 0;
+        const occupiedDistance = Number(ride.occupiedDistance ?? ride.distance) || 0;
+        const totalRouteDistance = Number(ride.totalRouteDistance) || (pickupDistance + occupiedDistance);
+        const pickupSeconds = Number(ride.pickupSeconds) || 0;
+        const occupiedSeconds = Number(ride.occupiedSeconds ?? ride.timeSec) || 0;
+        const occupiedRate = Number(ride.occupiedRate);
+        const routeCount = Array.isArray(ride.routePoints) ? ride.routePoints.length : 0;
+
+        addRow('走行履歴との照合', '候補データあり',
+          `距離 ${occupiedDistance.toFixed(3)} km / 実車 ${formatDuration(occupiedSeconds)} / 迎車 ${pickupDistance.toFixed(3)} km`);
+
+        addRow('低速・時間距離併用',
+          occupiedSeconds > 0 ? '影響あり得る' : '判定材料なし',
+          '現在のアプリは低速時の時間を10km/h相当の距離に換算してメーター進行距離へ加算しています。',
+          occupiedSeconds > 0 ? 'text-amber-300' : 'text-slate-400');
+
+        addRow('夜間割増', night ? 'あり' : 'なし',
+          night ? '夜間時はアプリの距離加算単位が変更されるため、実メーター側との設定差を確認する対象です。' : 'この走行記録では夜間割増は記録されていません。',
+          night ? 'text-amber-300' : 'text-slate-400');
+
+        addRow('迎車料金', dispatch ? 'あり ¥500' : 'なし',
+          dispatch ? '迎車料金が適用された走行です。実メーター側でも同じ扱いだったか確認します。' : 'この走行記録では迎車料金は適用されていません。',
+          dispatch ? 'text-amber-300' : 'text-slate-400');
+
+        addRow('実車率', Number.isFinite(occupiedRate) ? `${occupiedRate.toFixed(1)}%` : '記録なし',
+          `総走行 ${totalRouteDistance.toFixed(3)} km / 迎車 ${pickupDistance.toFixed(3)} km / 迎車時間 ${formatDuration(pickupSeconds)}`);
+
+        addRow('GPSルート', routeCount ? `${routeCount}点保存` : '保存なし',
+          routeCount ? '保存されたGPSルートがあり、距離計算のズレを調査する材料があります。' : 'この走行はルート座標が削除済み、または保存されていません。',
+          routeCount ? 'text-cyan-300' : 'text-slate-400');
+      } else {
+        addRow('走行履歴照合', '一致する記録を特定できませんでした',
+          '比較履歴には現在、走行記録IDが保存されていないため、日時・距離・時間から候補を推定しています。',
+          'text-amber-300');
+      }
+
+      const overall = diff === 0
+        ? '金額差はありません。'
+        : Math.abs(diff) <= METER_COMPARE_TOLERANCE_YEN
+          ? '差額は±¥100以内です。距離・低速時間・加算タイミングを重点確認します。'
+          : '±¥100を超える差です。距離、低速時間、夜間設定、迎車料金、GPSルートを順番に確認してください。';
+
+      document.getElementById('meterCompareAnalysisDate').innerText =
+        `${compareLog.date || ''}　アプリ ¥${appFare.toLocaleString()} / 実メーター ¥${actualFare.toLocaleString()}`;
+
+      document.getElementById('meterCompareAnalysisContent').innerHTML = `
+        <div class="rounded-2xl border border-cyan-500/20 bg-cyan-950/20 p-3 mb-3">
+          <div class="text-[10px] text-cyan-400 font-bold mb-1">分析結果</div>
+          <div class="text-xs text-slate-200 leading-relaxed">${overall}</div>
+        </div>
+        <div class="space-y-2">${rows.join('')}</div>
+        <div class="mt-3 rounded-xl border border-slate-800 bg-slate-950/50 p-3">
+          <div class="text-[10px] text-slate-500">注意</div>
+          <div class="text-[10px] text-slate-500 leading-relaxed mt-1">
+            保存されたアプリデータから原因候補を整理する分析です。
+            実メーター側の加算距離・加算秒数は保存されていないため、原因を100%断定するものではありません。
+          </div>
+        </div>`;
+
+      document.getElementById('meterCompareAnalysisModal').classList.remove('hidden');
+    }
+
     function finishMeterCompare() {
       updateMeterComparePreview();
 
