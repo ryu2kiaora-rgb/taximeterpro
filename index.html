@@ -1856,8 +1856,13 @@
       timerInterval = setInterval(() => {
         accumulatedSeconds++;
 
-        // メーター進行距離はGPS/OSRMの実走行区間で更新する。
-        // ここで時間分を別加算すると、GPS距離と二重計上になるため加算しない。
+        // GPSの実走行距離に加えて、低速・停車中は時間もメーター進行へ反映する。
+        // 10km/h換算で1秒あたり約2.78m。GPSが停車中に位置を返さなくても、
+        // 初乗り残り時間は1秒ずつ減る。GPSの実距離とは二重計上しない。
+        if (speedKmh <= LOW_SPEED_THRESHOLD) {
+          meterProgressDistance += (10 / 3600);
+          recalculateMeter();
+        }
         updateDisplay();
       }, 1000);
     }
