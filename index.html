@@ -496,6 +496,10 @@
             <div class="bg-black/90 border border-cyan-500/30 rounded-lg p-2 sm:p-3 mb-2 text-right shadow-inner">
               <div id="fareDisplay" class="font-digital text-4xl sm:text-6xl font-extrabold text-cyan-400 digital-glow tracking-tight">¥0</div>
               <div id="meterProgressInfo" class="mt-1 text-[10px] sm:text-xs font-mono text-amber-300 text-center">初乗り残り --:--</div>
+              <div class="mt-1 pt-1 border-t border-slate-800/80 text-center">
+                <span class="text-[9px] text-slate-500">事前確定運賃（距離算出・迎車込）</span>
+                <span id="fixedFareDistanceDisplay" class="ml-1 font-digital font-bold text-emerald-400 text-sm">¥0</span>
+              </div>
             </div>
           </div>
 
@@ -614,6 +618,8 @@
         <div class="bg-slate-950 p-3 rounded-lg border border-slate-800 space-y-1">
           <div class="flex justify-between"><span class="text-slate-400">確定メーター運賃:</span><span id="settleFareText" class="font-digital font-bold text-cyan-400 text-base">¥0</span></div>
           <div class="flex justify-between"><span class="text-slate-400">走行ルート距離 / 時間:</span><span id="settleMetaText" class="font-mono">0.00km / 00:00</span></div>
+          <div class="flex justify-between pt-1 border-t border-slate-800/60"><span class="text-slate-400">距離算出の事前確定運賃:</span><span id="settleFixedFareDistanceText" class="font-digital font-bold text-emerald-400">¥0</span></div>
+          <div class="text-[10px] text-slate-500">係数1.2（初乗り¥600 / 加算¥120）・迎車¥500・夜間は加算距離短縮</div>
           <div class="pt-1 text-[11px] text-slate-400 border-t border-slate-800/60 truncate"><span class="text-emerald-400 font-bold">発:</span> <span id="settleStartAddr">未測定</span></div>
           <div class="text-[11px] text-slate-400 truncate"><span class="text-amber-400 font-bold">着:</span> <span id="settleEndAddr">未測定</span></div>
         </div>
@@ -901,6 +907,14 @@
     const TIME_UNIT_SEC = 80;    // 80 seconds per ¥100 under low speed
     const LOW_SPEED_THRESHOLD = 10;
     const DISPATCH_FEE = 500;
+
+    // 実走行距離から算出する「事前確定運賃」
+    // 係数1.2：初乗り500円→600円、加算100円→120円。
+    // 距離条件はメーターと同じ。夜間はメーターと同様に加算距離を短縮する。
+    // 迎車料金は別枠で¥500を加算する（isDispatchApplied時）。
+    const FIXED_FARE_COEFFICIENT = 1.2;
+    const FIXED_BASE_FARE = Math.round(BASE_FARE * FIXED_FARE_COEFFICIENT);
+    const FIXED_DISTANCE_FARE_UNIT = Math.round(DISTANCE_FARE_UNIT * FIXED_FARE_COEFFICIENT);
 
     window.onload = function() {
       const saved = localStorage.getItem('taxi_ride_logs_pro_saitama');
@@ -1740,6 +1754,7 @@
       const mins = Math.floor(accumulatedSeconds / 60).toString().padStart(2, '0');
       const secs = (accumulatedSeconds % 60).toString().padStart(2, '0');
       document.getElementById('settleMetaText').innerText = `${totalDistance.toFixed(2)}km / ${mins}:${secs}`;
+      document.getElementById('settleFixedFareDistanceText').innerText = `¥${calculateDistanceBasedFixedFare(totalDistance).toLocaleString()}`;
       document.getElementById('settleStartAddr').innerText = startLocation.address;
       document.getElementById('settleEndAddr').innerText = endLocation.address;
       
@@ -2226,8 +2241,40 @@
       }
     }
 
+    function calculateDistanceBasedFixedFare(distanceKm) {
+      const distance = Math.max(0, Number(distanceKm) || 0);
+      let fare = FIXED_BASE_FARE;
+
+      // 「走れる距離」はメーターと同じ。夜間だけ加算距離を短縮する。
+      const effectiveDistanceUnit = isNightActive()
+        ? (DISTANCE_UNIT / FIXED_FARE_COEFFICIENT)
+        : DISTANCE_UNIT;
+
+      if (distance > BASE_DISTANCE) {
+        const extraDistance = distance - BASE_DISTANCE;
+        const addUnits = Math.ceil(extraDistance / effectiveDistanceUnit);
+        fare += addUnits * FIXED_DISTANCE_FARE_UNIT;
+      }
+
+      // 事前確定運賃にも迎車料金¥500を加算。
+      // 初乗り¥600・加算¥120とは別枠の固定料金。
+      if (isDispatchApplied) {
+        fare += DISPATCH_FEE;
+      }
+
+      return Math.round(fare / 10) * 10;
+    }
+
+    function updateDistanceBasedFixedFareDisplay() {
+      const el = document.getElementById('fixedFareDistanceDisplay');
+      if (!el) return;
+      const fare = calculateDistanceBasedFixedFare(totalDistance);
+      el.innerText = `¥${fare.toLocaleString()}`;
+    }
+
     function updateDisplay() {
       document.getElementById('fareDisplay').innerText = `¥${currentFare.toLocaleString()}`;
+      updateDistanceBasedFixedFareDisplay();
       updateMeterProgressInfo();
       document.getElementById('distanceDisplay').innerText = totalDistance.toFixed(2);
       
