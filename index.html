@@ -864,9 +864,9 @@
     const METER_COMPARE_TOLERANCE_YEN = 100;
     let isRoutingFetching = false;
     let timeFareAdded = 0;
-    // 初乗り1.027kmを「距離＋低速時間」で消化するためのメーター進行距離
-    // 低速時は10km/h換算で時間を距離に置き換え、80秒ごとに100円ではなく
-    // 初乗り分を消化してから213m相当ごとに100円加算する。
+    // 初乗り1.027kmを「実走行距離＋低速時の時間」で消化するためのメーター進行距離
+    // 実走行距離を必ず反映し、低速・停止時は10km/h換算の時間距離と比較して
+    // 大きい方を採用する。GPS距離と時間距離を二重計上しない。
     let meterProgressDistance = 0;
     let lastRoutedPosition = null;
     let lastRoutedTimestamp = 0;
@@ -1856,12 +1856,8 @@
       timerInterval = setInterval(() => {
         accumulatedSeconds++;
 
-        if (isOccupiedStarted && speedKmh <= LOW_SPEED_THRESHOLD) {
-          const lowSpeedEquivalentKmPerSecond = 10 / 3600;
-          meterProgressDistance += lowSpeedEquivalentKmPerSecond;
-          recalculateMeter();
-        }
-
+        // メーター進行距離はGPS/OSRMの実走行区間で更新する。
+        // ここで時間分を別加算すると、GPS距離と二重計上になるため加算しない。
         updateDisplay();
       }, 1000);
     }
@@ -1881,15 +1877,8 @@
       timerInterval = setInterval(() => {
         accumulatedSeconds++;
 
-        // 時速10km以下では「時間」をメーター進行距離へ換算する。
-        // 10km/h × 80秒 = 約0.222kmなので、80秒経過しただけでは
-        // 初乗り1.027kmを消化せず、いきなり100円は加算しない。
-        if (isOccupiedStarted && speedKmh <= LOW_SPEED_THRESHOLD) {
-          const lowSpeedEquivalentKmPerSecond = 10 / 3600;
-          meterProgressDistance += lowSpeedEquivalentKmPerSecond;
-          recalculateMeter();
-        }
-
+        // メーター進行距離はGPS/OSRMの実走行区間で更新する。
+        // ここで時間分を別加算すると、GPS距離と二重計上になるため加算しない。
         updateDisplay();
       }, 1000);
     }
@@ -2123,10 +2112,18 @@
               if (phaseAtRequest === 'ENGAGED') {
                 pickupDistance += routeDist;
               } else if (phaseAtRequest === 'OCCUPIED') {
+                // 実車の実走行距離は、そのままメーター進行にも反映する。
+                // 低速・停止時だけ「時間で進む分」と実距離を比較し、
+                // 大きい方を採用することで、実走行0.97kmなのに
+                // メーター進行だけが0.8km程度しか進まないズレを防ぐ。
                 totalDistance += routeDist;
-                if (speedKmh > LOW_SPEED_THRESHOLD) {
-                  meterProgressDistance += routeDist;
-                }
+
+                const lowSpeedEquivalentKm = (10 / 3600) * elapsedSec;
+                const meterSegmentProgress = speedKmh <= LOW_SPEED_THRESHOLD
+                  ? Math.max(routeDist, lowSpeedEquivalentKm)
+                  : routeDist;
+
+                meterProgressDistance += meterSegmentProgress;
                 recalculateMeter();
               }
             }
