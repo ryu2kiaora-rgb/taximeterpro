@@ -2245,26 +2245,57 @@
 
     function calculateDistanceBasedFixedFare(distanceKm) {
       const distance = Math.max(0, Number(distanceKm) || 0);
-      let fare = FIXED_BASE_FARE;
+      const nightMode = isNightActive();
 
-      // 「走れる距離」はメーターと同じ。夜間だけ加算距離を短縮する。
-      const effectiveDistanceUnit = isNightActive()
+      // まず「現在の加算段階」を距離から確定する。
+      // 深夜→通常 / 通常→深夜で切り替わっても、この段階数そのものは維持する。
+      // 夜間は走れる距離が短くなるため、加算段階の判定距離だけ短縮する。
+      const effectiveDistanceUnit = nightMode
         ? (DISTANCE_UNIT / FIXED_FARE_COEFFICIENT)
         : DISTANCE_UNIT;
 
+      let nightStep = 0;
       if (distance > BASE_DISTANCE) {
         const extraDistance = distance - BASE_DISTANCE;
-        const addUnits = Math.ceil(extraDistance / effectiveDistanceUnit);
-        fare += addUnits * FIXED_DISTANCE_FARE_UNIT;
+        nightStep = Math.ceil(extraDistance / effectiveDistanceUnit);
       }
 
-      // 事前確定運賃にも迎車料金¥500を加算。
-      // 初乗り¥600・加算¥120とは別枠の固定料金。
+      let theoreticalFare;
+
+      if (nightMode) {
+        // 深夜割増は「事前確定運賃本体」にだけ20%を掛ける。
+        // 迎車¥500には深夜割増を掛けない。
+        // 迎車あり: 500 + (600 + 120×step)×1.2
+        // 実装上は 1220 + 144×step として累積理論額を求め、
+        // 最後に10円未満を切り捨てる。
+        const nightBase = FIXED_BASE_FARE * FIXED_FARE_COEFFICIENT; // 720
+        const nightAdd = FIXED_DISTANCE_FARE_UNIT * FIXED_FARE_COEFFICIENT; // 144
+        theoreticalFare = nightBase + (nightAdd * nightStep);
+
+        if (isDispatchApplied) {
+          theoreticalFare += DISPATCH_FEE;
+        }
+
+        const nightDisplayFare = Math.floor(theoreticalFare / 10) * 10;
+
+        // 開発時の確認用。画面UIには表示しない。
+        console.debug('[事前確定運賃][深夜]', {
+          nightMode: true,
+          nightStep,
+          nightTheoreticalFare: theoreticalFare,
+          nightDisplayFare
+        });
+
+        return nightDisplayFare;
+      }
+
+      // 通常時間帯は既存ロジックを維持。
+      theoreticalFare = FIXED_BASE_FARE + (FIXED_DISTANCE_FARE_UNIT * nightStep);
       if (isDispatchApplied) {
-        fare += DISPATCH_FEE;
+        theoreticalFare += DISPATCH_FEE;
       }
 
-      return Math.round(fare / 10) * 10;
+      return Math.round(theoreticalFare / 10) * 10;
     }
 
     function updateDistanceBasedFixedFareDisplay() {
