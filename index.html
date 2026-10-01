@@ -887,63 +887,59 @@
     }
 
     async function finalizeAndOpenSettlement() {
-      // GPS取得が終わるまで空車ボタンをロックして、二重押しを防止
+      // 空車（精算）を押したら、GPS取得を待たずに金額入力モーダルを即表示する。
+      // GPS取得待ちで「GPS取得中...」のまま止まる不具合を防ぐ。
       if (isFinalizingSettlement) return;
       isFinalizingSettlement = true;
+
       // 「降車時間」は空車（精算）ボタンを押した瞬間を記録
       dropoffAt = new Date().toISOString();
 
-      const vacantBtn = document.getElementById('btnVacant');
-      const originalVacantHtml = vacantBtn ? vacantBtn.innerHTML : '';
-      if (vacantBtn) {
-        vacantBtn.disabled = true;
-        vacantBtn.classList.add('cursor-wait', 'opacity-80');
-        vacantBtn.innerHTML = '<div class=\"flex items-center justify-center gap-2 w-full\"><i class=\"fa-solid fa-spinner fa-spin\"></i><span>GPS取得中...</span></div>';
+      // まず現在保持している最新GPSを仮の降車地点として確保
+      if (lastPosition && Number.isFinite(lastPosition.lat) && Number.isFinite(lastPosition.lng)) {
+        endLocation.lat = lastPosition.lat;
+        endLocation.lng = lastPosition.lng;
       }
 
-      const setEndPosition = async (lat, lng) => {
-        lastPosition = { lat, lng };
-        latestGPSPosition = { lat, lng };
-        endLocation.lat = lat;
-        endLocation.lng = lng;
-        endLocation.address = await reverseGeocode(lat, lng);
-      };
-
-      // 精算ボタンを押した瞬間のGPSを取得して、着地点を最新化する
-      if (navigator.geolocation) {
-        document.getElementById('gpsStatusBadge').innerText = "着地GPS取得中...";
-        try {
-          const position = await new Promise((resolve, reject) => {
-            navigator.geolocation.getCurrentPosition(resolve, reject, {
-              enableHighAccuracy: true,
-              maximumAge: 0,
-              timeout: 5000
-            });
-          });
-          await setEndPosition(position.coords.latitude, position.coords.longitude);
-        } catch (e) {
-          if (lastPosition) {
-            await setEndPosition(lastPosition.lat, lastPosition.lng);
-          }
-        }
-      } else if (lastPosition) {
-        await setEndPosition(lastPosition.lat, lastPosition.lng);
-      }
-
-      // 最後のGPS点を履歴軌跡に追加
-      if (Number.isFinite(endLocation.lat) && Number.isFinite(endLocation.lng)) {
-        addRoutePoint(endLocation.lat, endLocation.lng, true);
-      }
-
+      // ★最重要：GPS取得を待たず、ここで即モーダルを開く
       openSettlementModal();
-
-      // モーダル表示後も、確定処理が終わるまでは二重操作を受け付けない
-      if (vacantBtn) {
-        vacantBtn.disabled = false;
-        vacantBtn.classList.remove('cursor-wait', 'opacity-80');
-        vacantBtn.innerHTML = originalVacantHtml;
-      }
       isFinalizingSettlement = false;
+
+      // 以降のGPS取得はバックグラウンドで行い、取得できれば降車地点を更新する。
+      // 金額入力・保存操作をGPS取得完了までブロックしない。
+      if (navigator.geolocation) {
+        const gpsBadge = document.getElementById('gpsStatusBadge');
+        if (gpsBadge) gpsBadge.innerText = '着地GPS取得中...';
+
+        navigator.geolocation.getCurrentPosition(
+          async (position) => {
+            const lat = position.coords.latitude;
+            const lng = position.coords.longitude;
+            lastPosition = { lat, lng };
+            latestGPSPosition = { lat, lng };
+            endLocation.lat = lat;
+            endLocation.lng = lng;
+
+            try {
+              endLocation.address = await reverseGeocode(lat, lng);
+            } catch (e) {}
+
+            if (Number.isFinite(endLocation.lat) && Number.isFinite(endLocation.lng)) {
+              addRoutePoint(endLocation.lat, endLocation.lng, true);
+            }
+            if (gpsBadge) gpsBadge.innerText = 'GPS取得済み';
+          },
+          () => {
+            // GPS取得失敗でもモーダルはそのまま使用可能。
+            if (gpsBadge) gpsBadge.innerText = 'GPS取得失敗（履歴GPSを使用）';
+          },
+          {
+            enableHighAccuracy: true,
+            maximumAge: 0,
+            timeout: 3000
+          }
+        );
+      }
     }
 
     function executeSetStatus(newState) {
