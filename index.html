@@ -445,6 +445,39 @@
   }
 }
 </style>
+<style>
+/* 金額入力モーダル：モーダル内部だけスクロール可能にする */
+#settlementModal {
+  overflow: hidden !important;
+}
+#settlementModal .settlement-keypad-modal {
+  max-height: calc(100dvh - 12px) !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  scrollbar-width: auto;
+  scrollbar-gutter: stable;
+}
+#settlementModal .settlement-keypad-modal::-webkit-scrollbar {
+  width: 8px;
+}
+#settlementModal .settlement-keypad-modal::-webkit-scrollbar-track {
+  background: #0f172a;
+  border-radius: 8px;
+}
+#settlementModal .settlement-keypad-modal::-webkit-scrollbar-thumb {
+  background: #475569;
+  border-radius: 8px;
+  border: 2px solid #0f172a;
+}
+@media (orientation: landscape) and (max-height: 700px) {
+  #settlementModal .settlement-keypad-modal {
+    max-height: calc(100dvh - 8px) !important;
+    overflow-y: auto !important;
+  }
+}
+</style>
 </head>
 <body class="min-h-screen flex flex-col justify-between select-none overflow-x-hidden">
 
