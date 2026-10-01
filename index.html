@@ -660,6 +660,104 @@
     </div>
   </div>
 
+  <!-- History Modal -->
+  <div id="historyScreen" class="fixed inset-0 z-[60] hidden bg-slate-950 overflow-y-auto">
+    <div class="min-h-screen w-full bg-slate-950">
+      <div class="sticky top-0 z-10 p-3 sm:p-4 border-b border-slate-800 bg-slate-950/95 backdrop-blur flex justify-between items-center">
+        <button onclick="closeHistoryModal()" class="flex items-center gap-2 text-slate-300 hover:text-white text-xs font-bold px-2 py-2 rounded-lg hover:bg-slate-900">
+          <i class="fa-solid fa-arrow-left"></i><span>メインへ戻る</span>
+        </button>
+        <h3 class="font-bold text-sm text-slate-200 flex items-center gap-2">
+          <i class="fa-solid fa-clipboard-list text-cyan-400"></i><span>走行・実車記録履歴</span>
+        </h3>
+        <div class="w-[88px] text-right text-[9px] text-slate-500">収支・ルート</div>
+      </div>
+      
+      <!-- Summary Header -->
+      <div id="historySummaryBox" class="bg-slate-900 border-b border-slate-800 px-3 sm:px-5 py-3 flex justify-around items-center text-center sticky top-[53px] z-[9]">
+        <div>
+          <div class="text-[10px] text-slate-400 uppercase">累計メーター運賃</div>
+          <div id="sumTotalFare" class="font-digital text-cyan-400 font-bold text-sm sm:text-base">¥0</div>
+        </div>
+        <div class="border-r border-slate-800 h-8"></div>
+        <div>
+          <div class="text-[10px] text-slate-400 uppercase">累計事前確定運賃</div>
+          <div id="sumTotalFixed" class="font-digital text-amber-400 font-bold text-sm sm:text-base">¥0</div>
+        </div>
+        <div class="border-r border-slate-800 h-8"></div>
+        <div>
+          <div class="text-[10px] text-slate-400 uppercase">総合差額 (確定-ﾒｰﾀｰ)</div>
+          <div id="sumTotalDiff" class="font-digital text-emerald-400 font-bold text-sm sm:text-base">¥0</div>
+        </div>
+      </div>
+
+      <div id="todaySummaryBox" class="bg-slate-950 px-3 sm:px-5 py-3 border-b border-slate-800"></div>
+
+      <div id="historyListContainer" class="max-w-4xl mx-auto p-3 sm:p-5 space-y-4"></div>
+      <div class="sticky bottom-0 p-3 sm:p-4 border-t border-slate-800 bg-slate-950/95 backdrop-blur flex justify-between items-center max-w-4xl mx-auto w-full">
+        <button onclick="clearHistory()" class="text-xs text-red-400 hover:text-red-300 flex items-center space-x-1 py-1 px-2 rounded hover:bg-red-950/30 transition">
+          <i class="fa-solid fa-trash-can"></i><span>全履歴を削除</span>
+        </button>
+        <button onclick="closeHistoryModal()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs px-4 py-2 rounded-lg font-medium transition">
+          閉じる
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Map Modal -->
+  <div id="mapModal" class="fixed inset-0 bg-black/85 backdrop-blur-sm z-[70] hidden flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-cyan-500/50 rounded-2xl max-w-xl w-full flex flex-col shadow-2xl overflow-hidden">
+      <div class="p-4 border-b border-slate-800 flex justify-between items-center bg-slate-950">
+        <h3 class="font-bold text-sm text-cyan-400 flex items-center space-x-2">
+          <i class="fa-solid fa-map-location-dot"></i><span>走行ルート・位置マップビュー</span>
+        </h3>
+        <button onclick="closeMapModal()" class="text-slate-400 hover:text-slate-200 p-1">
+          <i class="fa-solid fa-xmark text-lg"></i>
+        </button>
+      </div>
+      <div class="p-4 space-y-3">
+        <div class="bg-slate-950 p-3 rounded-lg border border-slate-800 text-xs space-y-1 font-mono">
+          <div class="text-emerald-400 truncate"><span class="font-bold text-slate-400">出発地:</span> <span id="mapStartAddrText">-</span></div>
+          <div class="text-amber-400 truncate"><span class="font-bold text-slate-400">到着地:</span> <span id="mapEndAddrText">-</span></div>
+          <div id="mapFareDisplay" class="flex items-center justify-between pt-2 mt-2 border-t border-cyan-500/20">
+            <span class="text-slate-400 text-[10px]">確定メーター運賃</span>
+            <span id="mapFareText" class="font-digital font-bold text-cyan-400 text-base">¥0</span>
+          </div>
+          <div id="mapFixedFareDisplay" class="flex items-center justify-between pt-1">
+            <span class="text-slate-500 text-[10px]">事前確定運賃</span>
+            <span id="mapFixedFareText" class="font-mono font-bold text-amber-300 text-xs">¥0</span>
+          </div>
+          <div id="mapRouteDetails" class="grid grid-cols-2 gap-x-3 gap-y-1 pt-2 mt-1 border-t border-slate-800/70 text-[10px] text-slate-400"></div>
+        </div>
+        <div class="w-full h-[55vh] min-h-[300px] sm:h-[60vh] rounded-xl overflow-hidden border border-slate-800 relative bg-slate-950">
+          <div id="routeMap" class="w-full h-full"></div>
+        </div>
+      </div>
+      <div class="p-3 border-t border-slate-800 bg-slate-950 flex justify-end">
+        <button onclick="closeMapModal()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs px-4 py-2 rounded-lg font-medium transition">
+          閉じる
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Custom Alert Modal -->
+  <div id="customModal" class="fixed inset-0 bg-black/75 backdrop-blur-sm z-[80] hidden flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-xs w-full p-5 text-center shadow-2xl space-y-4">
+      <div id="modalIcon" class="w-12 h-12 rounded-full bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center mx-auto text-cyan-400 text-xl">
+        <i class="fa-solid fa-info"></i>
+      </div>
+      <div>
+        <h4 id="modalTitle" class="font-bold text-sm text-slate-200 mb-1">通知</h4>
+        <p id="modalMessage" class="text-xs text-slate-400 leading-relaxed">メッセージが入ります</p>
+      </div>
+      <button onclick="closeCustomModal()" class="w-full bg-cyan-600 hover:bg-cyan-500 text-slate-950 font-bold py-2 rounded-xl text-xs transition shadow">
+        確認
+      </button>
+    </div>
+  </div>
+
   <script>
     let appState = 'VACANT';
     let currentFare = 0;
@@ -908,11 +1006,14 @@
       // 以降のGPS取得はバックグラウンドで行い、取得できれば降車地点を更新する。
       // 金額入力・保存操作をGPS取得完了までブロックしない。
       if (navigator.geolocation) {
+        const settlementGpsSessionId = gpsSessionId;
         const gpsBadge = document.getElementById('gpsStatusBadge');
         if (gpsBadge) gpsBadge.innerText = '着地GPS取得中...';
 
         navigator.geolocation.getCurrentPosition(
           async (position) => {
+            // 精算保存後に届いた古いGPSは、次の運行へ絶対に混ぜない。
+            if (gpsSessionId !== settlementGpsSessionId) return;
             const lat = position.coords.latitude;
             const lng = position.coords.longitude;
             lastPosition = { lat, lng };
@@ -1097,8 +1198,11 @@
       const secs = (accumulatedSeconds % 60).toString().padStart(2, '0');
       document.getElementById('settleMetaText').innerText = `${totalDistance.toFixed(2)}km / ${mins}:${secs}`;
       document.getElementById('settleFixedFareDistanceText').innerText = `¥${distanceFixedFare.toLocaleString()}`;
-      document.getElementById('settleStartAddr').innerText = startLocation.address;
-      document.getElementById('settleEndAddr').innerText = endLocation.address;
+      // テンキーモーダルでは住所表示欄を使わないため、存在する場合だけ更新する。
+      const settleStartAddr = document.getElementById('settleStartAddr');
+      const settleEndAddr = document.getElementById('settleEndAddr');
+      if (settleStartAddr) settleStartAddr.innerText = startLocation.address || '—';
+      if (settleEndAddr) settleEndAddr.innerText = endLocation.address || '—';
 
       const title = document.getElementById('settlementTitle');
       const inputLabel = document.getElementById('settlementInputLabel');
@@ -1236,7 +1340,9 @@
         ? `実メーター ¥${enteredFare.toLocaleString()} / アプリ ¥${meterFare.toLocaleString()} / 距離算出 ¥${distanceFixedFare.toLocaleString()} / アプリ差 ${externalVsMeter >= 0 ? '+' : ''}¥${externalVsMeter.toLocaleString()} / 距離算出差 ${externalVsDistance >= 0 ? '+' : ''}¥${externalVsDistance.toLocaleString()}`
         : `GO請求 ¥${enteredFare.toLocaleString()} / タクシーメーター ¥${meterFare.toLocaleString()} / 距離算出 ¥${distanceFixedFare.toLocaleString()} / GO→メーター ${externalVsMeter >= 0 ? '+' : ''}¥${externalVsMeter.toLocaleString()} / GO→距離算出 ${externalVsDistance >= 0 ? '+' : ''}¥${externalVsDistance.toLocaleString()}`;
 
-      showSaveCompleteModal(`${modeLabel}比較結果を保存`, message);
+      // 精算保存後は、保存完了表示より先に「完全リセット」を行う。
+      // これでプレビュー復帰時に実車状態が残らないようにする。
+      stopMeterSession();
 
       totalDistance = 0;
       accumulatedSeconds = 0;
@@ -1257,9 +1363,23 @@
       pickupDistance = 0;
       isDispatchApplied = false;
       isOccupiedStarted = false;
+      waitingForFreshRideGPS = false;
+      appState = 'VACANT';
+      startLocation = { lat: null, lng: null, address: '新規GPS測位中...' };
+      endLocation = { lat: null, lng: null, address: '新規GPS測位中...' };
+      routePoints = [];
       document.getElementById('dispatchFeeTag').classList.add('hidden');
+
+      // 状態バッジ・ボタン表示も明示的に「空車」へ戻す。
+      // appStateだけを書き換えると、画面上の「実車」表示が残るため、
+      // UI更新用のexecuteSetStatusを通して確実に空車表示へ戻す。
       executeSetStatus('VACANT');
+      appState = 'VACANT';
       updateDisplay();
+      updateAppModeUI();
+
+      // リセット完了後に保存完了メッセージを表示する。
+      showSaveCompleteModal(`${modeLabel}比較結果を保存`, message);
     }
 
     function startOccupiedMeterSession() {
