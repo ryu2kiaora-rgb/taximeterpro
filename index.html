@@ -394,34 +394,40 @@
     }
 
 
-    /* 実メーター比較モーダル */
-    #meterCompareModal > div {
-      max-height: 94dvh;
-      overflow-y: auto;
-    }
-
-
-    /* 実メーター比較履歴 */
-    #meterCompareHistoryContainer::-webkit-scrollbar {
-      width: 4px;
-    }
-    #meterCompareHistoryContainer::-webkit-scrollbar-thumb {
-      background: #334155;
-      border-radius: 999px;
-    }
-
-    /* 走行・実車記録履歴から開く実メーター比較履歴 */
-    #meterCompareHistoryViewModal > div {
-      max-height: 88dvh;
-    }
-    #meterCompareHistoryViewContainer::-webkit-scrollbar {
-      width: 4px;
-    }
-    #meterCompareHistoryViewContainer::-webkit-scrollbar-thumb {
-      background: #334155;
-      border-radius: 999px;
-    }
-
+      /* 精算・金額入力モーダル：縦横どちらでも画面内に収める */
+      #settlementModal { padding: 8px !important; overflow: hidden !important; }
+      #settlementModal .settlement-keypad-modal {
+        width: min(330px, 94vw) !important;
+        max-width: 330px !important;
+        max-height: 96dvh !important;
+        overflow: hidden !important;
+        box-sizing: border-box !important;
+      }
+      #settlementModal .settlement-key { 
+        height: 42px !important; min-height: 42px !important; padding: 0 !important;
+        border-radius: 8px !important; background: #1e293b; border: 1px solid #334155;
+        color: #f8fafc; font-size: 1rem; font-weight: 700; line-height: 1;
+      }
+      #settlementModal .settlement-key:active { transform: scale(.97); }
+      #settlementModal .settlement-key-sub { background: #334155; color: #a5f3fc; font-size: .75rem; }
+      #settlementModal .settlement-reference { white-space: nowrap; }
+      #settlementModal #settlementCompareResult:empty { display:none; }
+      @media (orientation: landscape) and (max-height: 700px) {
+        #settlementModal { padding: 4px !important; }
+        #settlementModal .settlement-keypad-modal {
+          width: min(300px, 60vw) !important;
+          max-width: 300px !important;
+          max-height: calc(100dvh - 8px) !important;
+          padding: 6px !important;
+          border-radius: 12px !important;
+        }
+        #settlementModal .settlement-key { height: 32px !important; min-height: 32px !important; font-size: .85rem !important; }
+        #settlementModal #modalFixedFareInput { height: 34px !important; font-size: 1.25rem !important; }
+        #settlementModal .settlement-reference { padding-top: 4px !important; padding-bottom: 4px !important; margin-bottom: 4px !important; }
+        #settlementModal .settlement-keypad-modal > .mb-2 { margin-bottom: 4px !important; }
+        #settlementModal .settlement-keypad-modal > .mt-2 { margin-top: 4px !important; }
+        #settlementModal .settlement-keypad-modal .h-9 { height: 30px !important; }
+      }
 </style>
 <style>
 /* 走行ルートビュー拡大 */
@@ -448,7 +454,7 @@
         <div class="bg-amber-500 text-slate-950 font-bold px-2.5 py-1 rounded-md text-xs shadow flex items-center space-x-1">
           <i class="fa-solid fa-taxi"></i><span>TAXIMETER PRO (埼玉)</span>
         </div>
-        <span id="modeIndicatorTag" class="text-[10px] bg-slate-800 text-slate-300 px-2 py-0.5 rounded border border-slate-700 font-mono">埼玉県特化モード</span>
+        <button id="modeIndicatorTag" type="button" onclick="toggleAppMode()" class="text-[10px] bg-cyan-950/60 hover:bg-cyan-900/70 text-cyan-300 px-2.5 py-1 rounded border border-cyan-700/60 font-mono transition" title="タクドラモード / ライドラモードを切り替え">ライドラモード</button>
       </div>
       <div class="flex items-center space-x-2">
         <button onclick="toggleNightOverride()" id="nightOverrideBtn" class="bg-slate-800 hover:bg-slate-700 text-slate-300 px-2.5 py-1 rounded-lg text-xs font-medium border border-slate-700 transition flex items-center space-x-1">
@@ -496,6 +502,10 @@
             <div class="bg-black/90 border border-cyan-500/30 rounded-lg p-2 sm:p-3 mb-2 text-right shadow-inner">
               <div id="fareDisplay" class="font-digital text-4xl sm:text-6xl font-extrabold text-cyan-400 digital-glow tracking-tight">¥0</div>
               <div id="meterProgressInfo" class="mt-1 text-[10px] sm:text-xs font-mono text-amber-300 text-center">初乗り残り --:--</div>
+              <div class="mt-1 pt-1 border-t border-slate-800/80 text-center">
+                <span class="text-[9px] text-slate-500">事前確定運賃（距離算出・迎車込）</span>
+                <span id="fixedFareDistanceDisplay" class="ml-1 font-digital font-bold text-emerald-400 text-sm">¥0</span>
+              </div>
             </div>
           </div>
 
@@ -569,9 +579,6 @@
           <span class="font-bold text-slate-300">OSRMルート検索 & GPS状態</span>
         </span>
         <div class="flex items-center space-x-2">
-          <button onclick="toggleMeterCompareMode()" id="meterCompareToggleBtn" class="text-[10px] bg-slate-800 hover:bg-slate-700 text-cyan-400 px-2 py-0.5 rounded border border-slate-700 transition">
-            実メーター比較
-          </button>
           <span id="gpsStatusBadge" class="text-amber-400 bg-amber-950/50 px-2 py-0.5 rounded-full border border-amber-800/50">待機中</span>
         </div>
       </div>
@@ -589,7 +596,7 @@
         <i class="fa-solid fa-chevron-down text-slate-500 transition-transform duration-200 group-open:rotate-180"></i>
       </summary>
       <div class="px-3.5 pb-3.5 text-[11px] text-slate-400 leading-relaxed">
-        「空車」ボタンを押すと精算・ライドシェア事前確定運賃の入力モーダルが起動します。埼玉県基準（初乗り1.027km/¥500、加算213m毎/¥100、時間80秒毎/¥100）および深夜自動短縮方式に対応しています。
+        「空車」ボタンを押すとモードに応じた精算・比較画面が起動します。<br>ライドラ：GOアプリの請求金額（事前確定運賃）を入力。<br>タクドラ：実際のタクシーメーター金額を入力。どちらも走行距離から算出した事前確定運賃との比較を確認できます。
       </div>
     </details>
 
@@ -599,243 +606,57 @@
     Soft Meter GPS Engine • Saitama Tariff OSRM Routing + Time-Fare Integration Engine
   </footer>
 
-  <!-- Settlement Modal -->
-  <div id="settlementModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
-    <div class="bg-slate-900 border border-cyan-500/50 rounded-2xl max-w-sm w-full p-5 shadow-2xl space-y-4 animate-in fade-in duration-200">
-      <div class="flex justify-between items-center border-b border-slate-800 pb-3">
-        <h4 class="font-bold text-sm text-cyan-400 flex items-center space-x-2">
-          <i class="fa-solid fa-file-invoice-dollar"></i><span>ライドシェア事前確定運賃入力</span>
+  <!-- Settlement Modal：コンパクト入力専用 -->
+  <div id="settlementModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-2">
+    <div class="settlement-keypad-modal bg-slate-900 border border-cyan-500/50 rounded-2xl shadow-2xl w-full max-w-[330px] p-3">
+      <div class="flex items-center justify-between mb-2">
+        <h4 id="settlementTitle" class="font-bold text-xs text-cyan-400 truncate pr-2">
+          <i class="fa-solid fa-car-side"></i><span>ライドラモード：GO請求額入力</span>
         </h4>
-        <button onclick="closeSettlementModal()" class="text-slate-400 hover:text-slate-200 p-1">
-          <i class="fa-solid fa-xmark"></i>
-        </button>
-      </div>
-      <div class="space-y-3 text-xs text-slate-300">
-        <div class="bg-slate-950 p-3 rounded-lg border border-slate-800 space-y-1">
-          <div class="flex justify-between"><span class="text-slate-400">確定メーター運賃:</span><span id="settleFareText" class="font-digital font-bold text-cyan-400 text-base">¥0</span></div>
-          <div class="flex justify-between"><span class="text-slate-400">走行ルート距離 / 時間:</span><span id="settleMetaText" class="font-mono">0.00km / 00:00</span></div>
-          <div class="pt-1 text-[11px] text-slate-400 border-t border-slate-800/60 truncate"><span class="text-emerald-400 font-bold">発:</span> <span id="settleStartAddr">未測定</span></div>
-          <div class="text-[11px] text-slate-400 truncate"><span class="text-amber-400 font-bold">着:</span> <span id="settleEndAddr">未測定</span></div>
-        </div>
-        <div>
-          <label class="block font-semibold mb-1 text-slate-300">ライドシェア事前確定運賃を入力 (必須):</label>
-          <div class="relative">
-            <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400 font-bold">¥</span>
-            <input type="text" id="modalFixedFareInput" inputmode="none" readonly autocomplete="off" placeholder="例: 3500" class="w-full bg-slate-950 border border-cyan-600/50 rounded-lg py-2 pl-8 pr-3 text-slate-100 font-digital text-lg focus:outline-none focus:border-cyan-400 cursor-default" onclick="openFareKeypad()">
-          </div>
-
-          <!-- スマホの標準テンキーを使わず、モーダル内の専用テンキーで入力 -->
-          <div id="fareKeypad" class="mt-2 grid grid-cols-3 gap-1.5">
-            <button type="button" onclick="fareKeypadPress('1')" class="bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-100 font-bold py-2.5 rounded-lg border border-slate-700">1</button>
-            <button type="button" onclick="fareKeypadPress('2')" class="bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-100 font-bold py-2.5 rounded-lg border border-slate-700">2</button>
-            <button type="button" onclick="fareKeypadPress('3')" class="bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-100 font-bold py-2.5 rounded-lg border border-slate-700">3</button>
-            <button type="button" onclick="fareKeypadPress('4')" class="bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-100 font-bold py-2.5 rounded-lg border border-slate-700">4</button>
-            <button type="button" onclick="fareKeypadPress('5')" class="bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-100 font-bold py-2.5 rounded-lg border border-slate-700">5</button>
-            <button type="button" onclick="fareKeypadPress('6')" class="bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-100 font-bold py-2.5 rounded-lg border border-slate-700">6</button>
-            <button type="button" onclick="fareKeypadPress('7')" class="bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-100 font-bold py-2.5 rounded-lg border border-slate-700">7</button>
-            <button type="button" onclick="fareKeypadPress('8')" class="bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-100 font-bold py-2.5 rounded-lg border border-slate-700">8</button>
-            <button type="button" onclick="fareKeypadPress('9')" class="bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-100 font-bold py-2.5 rounded-lg border border-slate-700">9</button>
-            <button type="button" onclick="fareKeypadClear()" class="bg-slate-700 hover:bg-slate-600 active:scale-95 text-amber-300 font-bold py-2.5 rounded-lg border border-slate-600 text-xs">クリア</button>
-            <button type="button" onclick="fareKeypadPress('0')" class="bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-100 font-bold py-2.5 rounded-lg border border-slate-700">0</button>
-            <button type="button" onclick="fareKeypadBackspace()" class="bg-slate-700 hover:bg-slate-600 active:scale-95 text-cyan-300 font-bold py-2.5 rounded-lg border border-slate-600"><i class="fa-solid fa-delete-left"></i></button>
-          </div>
-        </div>
-      </div>
-      <div class="flex space-x-2 pt-2">
-        <button onclick="saveRideWithFixedFare()" class="flex-1 bg-cyan-600 hover:bg-cyan-500 text-slate-950 font-bold py-2.5 rounded-xl text-xs transition shadow">
-          保存して空車にする
-        </button>
-      </div>
-    </div>
-  </div>
-
-  <!-- 実メーター比較モード Modal -->
-  <div id="meterCompareModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
-    <div class="bg-slate-900 border border-amber-500/50 rounded-2xl max-w-sm w-full p-5 shadow-2xl space-y-4">
-      <div class="flex justify-between items-center border-b border-slate-800 pb-3">
-        <h4 class="font-bold text-sm text-amber-300 flex items-center space-x-2">
-          <i class="fa-solid fa-scale-balanced"></i><span>実メーター比較</span>
-        </h4>
-        <button onclick="closeMeterCompareModal()" class="text-slate-400 hover:text-slate-200 p-1">
+        <button type="button" onclick="closeSettlementModal()" class="shrink-0 text-slate-400 hover:text-white p-1 leading-none">
           <i class="fa-solid fa-xmark"></i>
         </button>
       </div>
 
-      <div class="bg-slate-950 p-3 rounded-lg border border-slate-800 space-y-1 text-xs">
-        <div class="flex justify-between">
-          <span class="text-slate-400">アプリ計算運賃</span>
-          <span id="compareAppFareText" class="font-digital font-bold text-cyan-400 text-base">¥0</span>
-        </div>
-        <div class="flex justify-between text-slate-500">
-          <span>走行距離</span><span id="compareDistanceText">0.00km</span>
-        </div>
-        <div class="flex justify-between text-slate-500">
-          <span>実車時間</span><span id="compareTimeText">0分0秒</span>
-        </div>
+      <!-- 比較対象は小さく1行だけ表示 -->
+      <div class="settlement-reference flex items-center justify-between gap-2 bg-slate-950 border border-slate-800 rounded-lg px-2.5 py-1.5 mb-2 text-[10px]">
+        <span class="text-slate-400">アプリメーター <b id="settleFareText" class="text-cyan-300">¥0</b></span>
+        <span class="text-slate-500">距離 <b id="settleFixedFareDistanceText" class="text-emerald-300">¥0</b></span>
+        <span id="settleMetaText" class="text-slate-500">0.00km / 00:00</span>
       </div>
 
-      <div>
-        <label class="block font-semibold mb-1 text-amber-300 text-xs">実メーターの確定金額を入力</label>
+      <div class="text-center mb-2">
+        <div id="settlementInputLabel" class="text-[10px] text-slate-400 mb-1">GO請求金額を入力</div>
         <div class="relative">
-          <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400 font-bold">¥</span>
-          <input type="text" id="meterCompareFareInput" inputmode="none" readonly autocomplete="off"
-                 placeholder="例: 1200"
-                 class="w-full bg-slate-950 border border-amber-600/50 rounded-lg py-2 pl-8 pr-3 text-slate-100 font-digital text-lg focus:outline-none focus:border-amber-400">
-        </div>
-
-        <div class="mt-2 grid grid-cols-3 gap-1.5">
-          <button type="button" onclick="compareKeypadPress('1')" class="bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-100 font-bold py-2.5 rounded-lg border border-slate-700">1</button>
-          <button type="button" onclick="compareKeypadPress('2')" class="bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-100 font-bold py-2.5 rounded-lg border border-slate-700">2</button>
-          <button type="button" onclick="compareKeypadPress('3')" class="bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-100 font-bold py-2.5 rounded-lg border border-slate-700">3</button>
-          <button type="button" onclick="compareKeypadPress('4')" class="bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-100 font-bold py-2.5 rounded-lg border border-slate-700">4</button>
-          <button type="button" onclick="compareKeypadPress('5')" class="bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-100 font-bold py-2.5 rounded-lg border border-slate-700">5</button>
-          <button type="button" onclick="compareKeypadPress('6')" class="bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-100 font-bold py-2.5 rounded-lg border border-slate-700">6</button>
-          <button type="button" onclick="compareKeypadPress('7')" class="bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-100 font-bold py-2.5 rounded-lg border border-slate-700">7</button>
-          <button type="button" onclick="compareKeypadPress('8')" class="bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-100 font-bold py-2.5 rounded-lg border border-slate-700">8</button>
-          <button type="button" onclick="compareKeypadPress('9')" class="bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-100 font-bold py-2.5 rounded-lg border border-slate-700">9</button>
-          <button type="button" onclick="compareKeypadClear()" class="bg-slate-700 hover:bg-slate-600 active:scale-95 text-amber-300 font-bold py-2.5 rounded-lg border border-slate-600 text-xs">クリア</button>
-          <button type="button" onclick="compareKeypadPress('0')" class="bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-100 font-bold py-2.5 rounded-lg border border-slate-700">0</button>
-          <button type="button" onclick="compareKeypadBackspace()" class="bg-slate-700 hover:bg-slate-600 active:scale-95 text-cyan-300 font-bold py-2.5 rounded-lg border border-slate-600"><i class="fa-solid fa-delete-left"></i></button>
+          <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-500 font-bold">¥</span>
+          <input type="text" id="modalFixedFareInput" inputmode="none" readonly autocomplete="off" placeholder="0"
+            class="w-full bg-slate-950 border border-cyan-600/60 rounded-lg h-11 pl-8 pr-3 text-right text-slate-100 font-digital text-2xl focus:outline-none focus:border-cyan-400 cursor-default"
+            onclick="openFareKeypad()" oninput="updateSettlementComparePreview()">
         </div>
       </div>
 
-      <div id="meterCompareResult" class="bg-slate-950/80 border border-slate-800 rounded-lg p-3 text-xs">
-        <span class="text-slate-500">実メーター運賃を入力すると誤差判定します。</span>
+      <!-- ほぼテンキーだけの入力エリア -->
+      <div id="fareKeypad" class="grid grid-cols-3 gap-1.5">
+        <button type="button" onclick="fareKeypadPress('1')" class="settlement-key">1</button>
+        <button type="button" onclick="fareKeypadPress('2')" class="settlement-key">2</button>
+        <button type="button" onclick="fareKeypadPress('3')" class="settlement-key">3</button>
+        <button type="button" onclick="fareKeypadPress('4')" class="settlement-key">4</button>
+        <button type="button" onclick="fareKeypadPress('5')" class="settlement-key">5</button>
+        <button type="button" onclick="fareKeypadPress('6')" class="settlement-key">6</button>
+        <button type="button" onclick="fareKeypadPress('7')" class="settlement-key">7</button>
+        <button type="button" onclick="fareKeypadPress('8')" class="settlement-key">8</button>
+        <button type="button" onclick="fareKeypadPress('9')" class="settlement-key">9</button>
+        <button type="button" onclick="fareKeypadClear()" class="settlement-key settlement-key-sub">C</button>
+        <button type="button" onclick="fareKeypadPress('0')" class="settlement-key">0</button>
+        <button type="button" onclick="fareKeypadBackspace()" class="settlement-key settlement-key-sub"><i class="fa-solid fa-delete-left"></i></button>
       </div>
 
-      <div class="text-[10px] text-slate-500 leading-relaxed">
-        判定基準：差額 <b class="text-slate-300">±¥100以内</b> は「許容範囲内」、それを超える場合は「要確認」。
-        比較結果は通常の売上履歴とは分けて保存します。
-      </div>
+      <div id="settlementCompareResult" class="text-center min-h-[20px] mt-2 text-[10px] text-slate-400"></div>
 
-      <button onclick="finishMeterCompare()" class="w-full bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold py-2.5 rounded-xl text-xs transition shadow">
-        比較結果を保存して終了
-      </button>
-
-      <div class="border-t border-slate-800 pt-3">
-        <div class="flex justify-between items-center mb-2">
-          <div class="text-[11px] font-bold text-slate-300">
-            <i class="fa-solid fa-clock-rotate-left mr-1 text-cyan-400"></i>実メーター比較履歴
-          </div>
-          <button type="button" onclick="clearMeterCompareHistory()" class="text-[9px] text-slate-500 hover:text-red-400">
-            全削除
-          </button>
-        </div>
-        <div id="meterCompareHistoryContainer" class="space-y-2 max-h-52 overflow-y-auto pr-1"></div>
+      <div class="grid grid-cols-2 gap-1.5 mt-2">
+        <button type="button" onclick="closeSettlementModal()" class="h-9 rounded-lg bg-slate-800 border border-slate-700 text-slate-300 text-[11px] font-bold">キャンセル</button>
+        <button id="settlementSaveBtn" type="button" onclick="saveRideWithFixedFare()" class="h-9 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-slate-950 text-[11px] font-bold shadow">保存</button>
       </div>
-    </div>
-  </div>
-
-  <!-- History Modal -->
-  <div id="historyScreen" class="fixed inset-0 z-[60] hidden bg-slate-950 overflow-y-auto">
-    <div class="min-h-screen w-full bg-slate-950">
-      <div class="sticky top-0 z-10 p-3 sm:p-4 border-b border-slate-800 bg-slate-950/95 backdrop-blur flex justify-between items-center">
-        <button onclick="closeHistoryModal()" class="flex items-center gap-2 text-slate-300 hover:text-white text-xs font-bold px-2 py-2 rounded-lg hover:bg-slate-900">
-          <i class="fa-solid fa-arrow-left"></i><span>メインへ戻る</span>
-        </button>
-        <h3 class="font-bold text-sm text-slate-200 flex items-center gap-2">
-          <i class="fa-solid fa-clipboard-list text-cyan-400"></i><span>走行・実車記録履歴</span>
-        </h3>
-        <div class="w-[88px] text-right text-[9px] text-slate-500">収支・ルート</div>
-      </div>
-      
-      <!-- Summary Header -->
-      <div id="historySummaryBox" class="bg-slate-900 border-b border-slate-800 px-3 sm:px-5 py-3 flex justify-around items-center text-center sticky top-[53px] z-[9]">
-        <div>
-          <div class="text-[10px] text-slate-400 uppercase">累計メーター運賃</div>
-          <div id="sumTotalFare" class="font-digital text-cyan-400 font-bold text-sm sm:text-base">¥0</div>
-        </div>
-        <div class="border-r border-slate-800 h-8"></div>
-        <div>
-          <div class="text-[10px] text-slate-400 uppercase">累計事前確定運賃</div>
-          <div id="sumTotalFixed" class="font-digital text-amber-400 font-bold text-sm sm:text-base">¥0</div>
-        </div>
-        <div class="border-r border-slate-800 h-8"></div>
-        <div>
-          <div class="text-[10px] text-slate-400 uppercase">総合差額 (確定-ﾒｰﾀｰ)</div>
-          <div id="sumTotalDiff" class="font-digital text-emerald-400 font-bold text-sm sm:text-base">¥0</div>
-        </div>
-      </div>
-
-      <div id="todaySummaryBox" class="bg-slate-950 px-3 sm:px-5 py-3 border-b border-slate-800"></div>
-
-      <!-- 実メーター比較履歴への入口 -->
-      <div class="px-3 sm:px-5 py-2.5 border-b border-slate-800 bg-slate-950">
-        <button type="button" onclick="openMeterCompareHistoryView()"
-          class="w-full flex items-center justify-between bg-slate-900 hover:bg-slate-800 border border-slate-700 hover:border-cyan-700/60 rounded-lg px-3 py-2 transition">
-          <span class="flex items-center gap-2 text-[11px] font-bold text-cyan-300">
-            <i class="fa-solid fa-scale-balanced"></i>
-            <span>実メーター比較履歴を確認</span>
-          </span>
-          <span class="flex items-center gap-1.5 text-[9px] text-slate-500">
-            <span id="meterCompareHistoryCount">0件</span>
-            <i class="fa-solid fa-chevron-right text-slate-600"></i>
-          </span>
-        </button>
-      </div>
-
-      <div id="historyListContainer" class="max-w-4xl mx-auto p-3 sm:p-5 space-y-4"></div>
-      <div class="sticky bottom-0 p-3 sm:p-4 border-t border-slate-800 bg-slate-950/95 backdrop-blur flex justify-between items-center max-w-4xl mx-auto w-full">
-        <button onclick="clearHistory()" class="text-xs text-red-400 hover:text-red-300 flex items-center space-x-1 py-1 px-2 rounded hover:bg-red-950/30 transition">
-          <i class="fa-solid fa-trash-can"></i><span>全履歴を削除</span>
-        </button>
-        <button onclick="closeHistoryModal()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs px-4 py-2 rounded-lg font-medium transition">
-          閉じる
-        </button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Map Modal -->
-  <div id="mapModal" class="fixed inset-0 bg-black/85 backdrop-blur-sm z-[70] hidden flex items-center justify-center p-4">
-    <div class="bg-slate-900 border border-cyan-500/50 rounded-2xl max-w-xl w-full flex flex-col shadow-2xl overflow-hidden">
-      <div class="p-4 border-b border-slate-800 flex justify-between items-center bg-slate-950">
-        <h3 class="font-bold text-sm text-cyan-400 flex items-center space-x-2">
-          <i class="fa-solid fa-map-location-dot"></i><span>走行ルート・位置マップビュー</span>
-        </h3>
-        <button onclick="closeMapModal()" class="text-slate-400 hover:text-slate-200 p-1">
-          <i class="fa-solid fa-xmark text-lg"></i>
-        </button>
-      </div>
-      <div class="p-4 space-y-3">
-        <div class="bg-slate-950 p-3 rounded-lg border border-slate-800 text-xs space-y-1 font-mono">
-          <div class="text-emerald-400 truncate"><span class="font-bold text-slate-400">出発地:</span> <span id="mapStartAddrText">-</span></div>
-          <div class="text-amber-400 truncate"><span class="font-bold text-slate-400">到着地:</span> <span id="mapEndAddrText">-</span></div>
-          <div id="mapFareDisplay" class="flex items-center justify-between pt-2 mt-2 border-t border-cyan-500/20">
-            <span class="text-slate-400 text-[10px]">確定メーター運賃</span>
-            <span id="mapFareText" class="font-digital font-bold text-cyan-400 text-base">¥0</span>
-          </div>
-          <div id="mapFixedFareDisplay" class="flex items-center justify-between pt-1">
-            <span class="text-slate-500 text-[10px]">事前確定運賃</span>
-            <span id="mapFixedFareText" class="font-mono font-bold text-amber-300 text-xs">¥0</span>
-          </div>
-          <div id="mapRouteDetails" class="grid grid-cols-2 gap-x-3 gap-y-1 pt-2 mt-1 border-t border-slate-800/70 text-[10px] text-slate-400"></div>
-        </div>
-        <div class="w-full h-[55vh] min-h-[300px] sm:h-[60vh] rounded-xl overflow-hidden border border-slate-800 relative bg-slate-950">
-          <div id="routeMap" class="w-full h-full"></div>
-        </div>
-      </div>
-      <div class="p-3 border-t border-slate-800 bg-slate-950 flex justify-end">
-        <button onclick="closeMapModal()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs px-4 py-2 rounded-lg font-medium transition">
-          閉じる
-        </button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Custom Alert Modal -->
-  <div id="customModal" class="fixed inset-0 bg-black/75 backdrop-blur-sm z-[80] hidden flex items-center justify-center p-4">
-    <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-xs w-full p-5 text-center shadow-2xl space-y-4">
-      <div id="modalIcon" class="w-12 h-12 rounded-full bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center mx-auto text-cyan-400 text-xl">
-        <i class="fa-solid fa-info"></i>
-      </div>
-      <div>
-        <h4 id="modalTitle" class="font-bold text-sm text-slate-200 mb-1">通知</h4>
-        <p id="modalMessage" class="text-xs text-slate-400 leading-relaxed">メッセージが入ります</p>
-      </div>
-      <button onclick="closeCustomModal()" class="w-full bg-cyan-600 hover:bg-cyan-500 text-slate-950 font-bold py-2 rounded-xl text-xs transition shadow">
-        確認
-      </button>
     </div>
   </div>
 
@@ -854,9 +675,6 @@
     let isDispatchApplied = false;
     let isOccupiedStarted = false;
     let nightOverrideMode = 'AUTO';
-    let isMeterCompareMode = false;
-    let meterCompareResult = null;
-    const METER_COMPARE_TOLERANCE_YEN = 100;
     let isRoutingFetching = false;
     let timeFareAdded = 0;
     // 初乗り1.027kmを「距離＋低速時間」で消化するためのメーター進行距離
@@ -903,6 +721,14 @@
     const LOW_SPEED_THRESHOLD = 10;
     const DISPATCH_FEE = 500;
 
+    // 実走行距離から算出する「事前確定運賃」
+    // 通常：初乗り¥600、加算¥120、係数1.2。迎車¥500は別枠。
+    // 深夜：迎車¥500には割増を掛けず、初乗り・加算部分だけ1.2倍。
+    // 深夜でも「走れる距離」を20%短縮する方式は使用しない。
+    const FIXED_FARE_COEFFICIENT = 1.2;
+    const FIXED_BASE_FARE = Math.round(BASE_FARE * FIXED_FARE_COEFFICIENT); // ¥600
+    const FIXED_DISTANCE_FARE_UNIT = Math.round(DISTANCE_FARE_UNIT * FIXED_FARE_COEFFICIENT); // ¥120
+
     window.onload = function() {
       const saved = localStorage.getItem('taxi_ride_logs_pro_saitama');
       if (saved) {
@@ -915,6 +741,7 @@
       
       updateClock();
       clockInterval = setInterval(updateClock, 1000);
+      updateAppModeUI();
       updateDisplay();
       
       checkOrientation();
@@ -973,496 +800,6 @@
       } else {
         badge.classList.add('hidden');
       }
-    }
-
-    function toggleMeterCompareMode() {
-      const btn = document.getElementById('meterCompareToggleBtn');
-
-      // 運行中はモード切替をさせず、現在の運行を壊さない。
-      if (appState !== 'VACANT') {
-        showModal("実メーター比較", "比較モードの切替は空車時に行ってください。現在の運行はそのまま継続します。");
-        return;
-      }
-
-      isMeterCompareMode = !isMeterCompareMode;
-
-      if (isMeterCompareMode) {
-        btn.innerText = "比較モード ON";
-        btn.className = "text-[10px] bg-amber-900/50 hover:bg-amber-800 text-amber-300 px-2 py-0.5 rounded border border-amber-700 transition";
-        document.getElementById('addressDisplay').innerText = "実メーター比較モード：迎車 → 実車 → 空車で比較します";
-        document.getElementById('gpsStatusBadge').innerText = "比較待機";
-        document.getElementById('gpsStatusBadge').className = "text-amber-400 bg-amber-950/50 px-2 py-0.5 rounded-full border border-amber-800/50";
-      } else {
-        btn.innerText = "実メーター比較";
-        btn.className = "text-[10px] bg-slate-800 hover:bg-slate-700 text-cyan-400 px-2 py-0.5 rounded border border-slate-700 transition";
-        document.getElementById('addressDisplay').innerText = "GPS信号をスキャン中... (発着地点住所の自動逆引き対応)";
-        document.getElementById('gpsStatusBadge').innerText = "待機中";
-        document.getElementById('gpsStatusBadge').className = "text-amber-400 bg-amber-950/50 px-2 py-0.5 rounded-full border border-amber-800/50";
-      }
-    }
-
-    function updateMeterComparePreview() {
-      const input = document.getElementById('meterCompareFareInput');
-      const result = document.getElementById('meterCompareResult');
-      if (!input || !result) return;
-
-      const actualFare = Number(input.value);
-      if (!Number.isFinite(actualFare) || actualFare <= 0) {
-        result.innerHTML = '<span class="text-slate-500">実メーター運賃を入力すると誤差判定します。</span>';
-        meterCompareResult = null;
-        return;
-      }
-
-      const appFare = Number(currentFare) || 0;
-      const diff = actualFare - appFare;
-      const absDiff = Math.abs(diff);
-      const errorRate = appFare > 0 ? (absDiff / appFare) * 100 : 0;
-
-      let judgment;
-      let judgmentClass;
-      if (absDiff === 0) {
-        judgment = '完全一致';
-        judgmentClass = 'text-emerald-400';
-      } else if (absDiff <= METER_COMPARE_TOLERANCE_YEN) {
-        judgment = `許容範囲内（±¥${METER_COMPARE_TOLERANCE_YEN.toLocaleString()}以内）`;
-        judgmentClass = 'text-amber-300';
-      } else {
-        judgment = '要確認';
-        judgmentClass = 'text-red-400';
-      }
-
-      const sign = diff > 0 ? '+' : '';
-      result.innerHTML = `
-        <div class="grid grid-cols-2 gap-x-3 gap-y-1">
-          <span class="text-slate-400">アプリ運賃</span>
-          <b class="text-cyan-400 text-right">¥${appFare.toLocaleString()}</b>
-          <span class="text-slate-400">実メーター</span>
-          <b class="text-white text-right">¥${actualFare.toLocaleString()}</b>
-          <span class="text-slate-400">差額（実−アプリ）</span>
-          <b class="${diff === 0 ? 'text-emerald-400' : diff > 0 ? 'text-red-400' : 'text-amber-300'} text-right">${sign}¥${diff.toLocaleString()}</b>
-          <span class="text-slate-400">誤差率</span>
-          <b class="text-slate-200 text-right">${errorRate.toFixed(2)}%</b>
-        </div>
-        <div class="mt-2 pt-2 border-t border-slate-800 text-center font-bold ${judgmentClass}">
-          判定：${judgment}
-        </div>
-      `;
-
-      meterCompareResult = {
-        appFare,
-        actualFare,
-        diff,
-        absDiff,
-        errorRate: Number(errorRate.toFixed(2)),
-        judgment
-      };
-    }
-
-    function compareKeypadPress(value) {
-      const input = document.getElementById('meterCompareFareInput');
-      if (!input) return;
-
-      let current = String(input.value || '');
-      if (current === '0') current = '';
-      if (current.length >= 7) return;
-
-      input.value = current + value;
-      updateMeterComparePreview();
-    }
-
-    function compareKeypadClear() {
-      const input = document.getElementById('meterCompareFareInput');
-      if (!input) return;
-      input.value = '';
-      updateMeterComparePreview();
-    }
-
-    function compareKeypadBackspace() {
-      const input = document.getElementById('meterCompareFareInput');
-      if (!input) return;
-      input.value = String(input.value || '').slice(0, -1);
-      updateMeterComparePreview();
-    }
-
-    function openMeterCompareModal() {
-      const input = document.getElementById('meterCompareFareInput');
-      if (!input) return;
-
-      input.value = '';
-      meterCompareResult = null;
-      document.getElementById('compareAppFareText').innerText = `¥${Number(currentFare).toLocaleString()}`;
-      document.getElementById('compareDistanceText').innerText = `${totalDistance.toFixed(2)}km`;
-      document.getElementById('compareTimeText').innerText = formatDuration(accumulatedSeconds);
-      updateMeterComparePreview();
-      renderMeterCompareHistory();
-      document.getElementById('meterCompareModal').classList.remove('hidden');
-    }
-
-    function closeMeterCompareModal() {
-      document.getElementById('meterCompareModal').classList.add('hidden');
-    }
-
-    function loadMeterCompareLogs() {
-      try {
-        const logs = JSON.parse(localStorage.getItem('taxi_meter_compare_logs') || '[]');
-        return Array.isArray(logs) ? logs : [];
-      } catch (e) {
-        return [];
-      }
-    }
-
-    function renderMeterCompareHistory(containerId = 'meterCompareHistoryContainer') {
-      const container = document.getElementById(containerId);
-      if (!container) return;
-
-      const logs = loadMeterCompareLogs();
-      updateMeterCompareHistoryEntryCount(logs.length);
-
-      if (logs.length === 0) {
-        container.innerHTML = `
-          <div class="text-center py-5 text-slate-500 text-xs">
-            <i class="fa-solid fa-scale-balanced mb-2 text-lg"></i>
-            <div>実メーター比較履歴はまだありません</div>
-          </div>
-        `;
-        return;
-      }
-
-      container.innerHTML = '';
-
-      logs.forEach((log, index) => {
-        const appFare = Number(log.appFare) || 0;
-        const actualFare = Number(log.actualFare) || 0;
-        const diff = Number(log.diff) || 0;
-        const errorRate = Number(log.errorRate) || 0;
-
-        let diffClass = 'text-slate-300';
-        if (diff > 0) diffClass = 'text-red-400';
-        if (diff < 0) diffClass = 'text-amber-300';
-
-        let judgmentClass = 'text-red-400';
-        if (log.judgment === '完全一致') judgmentClass = 'text-emerald-400';
-        else if (log.judgment === '許容範囲内（±¥100以内）') judgmentClass = 'text-amber-300';
-
-        const card = document.createElement('div');
-        card.className = 'bg-slate-900/70 border border-slate-800 rounded-lg p-3 space-y-2';
-
-        card.innerHTML = `
-          <div class="flex justify-between items-center">
-            <div class="text-[10px] text-slate-400">
-              <i class="fa-regular fa-clock mr-1"></i>${escapeHtml(String(log.date || '日時不明'))}
-            </div>
-            <button type="button"
-              onclick="deleteMeterCompareHistory(${Number(log.id)})"
-              class="text-slate-600 hover:text-red-400 p-1"
-              title="比較履歴を削除">
-              <i class="fa-solid fa-trash-can"></i>
-            </button>
-          </div>
-
-          <div class="grid grid-cols-2 gap-2">
-            <div class="bg-slate-950 rounded p-2">
-              <div class="text-[9px] text-slate-500">アプリ</div>
-              <div class="font-digital font-bold text-cyan-400">¥${appFare.toLocaleString()}</div>
-            </div>
-            <div class="bg-slate-950 rounded p-2">
-              <div class="text-[9px] text-slate-500">実メーター</div>
-              <div class="font-digital font-bold text-white">¥${actualFare.toLocaleString()}</div>
-            </div>
-          </div>
-
-          <div class="grid grid-cols-3 gap-2 text-[10px] font-mono">
-            <div>
-              <span class="text-slate-500">差額</span>
-              <b class="${diffClass} block">${diff > 0 ? '+' : ''}¥${diff.toLocaleString()}</b>
-            </div>
-            <div>
-              <span class="text-slate-500">誤差率</span>
-              <b class="text-slate-200 block">${errorRate.toFixed(2)}%</b>
-            </div>
-            <div>
-              <span class="text-slate-500">走行</span>
-              <b class="text-slate-200 block">${Number(log.distance || 0).toFixed(2)}km</b>
-            </div>
-          </div>
-
-          <div class="flex justify-between items-center pt-1 border-t border-slate-800">
-            <span class="text-[9px] text-slate-500">実車時間 ${formatDuration(Number(log.timeSec) || 0)}</span>
-            <span class="text-[10px] font-bold ${judgmentClass}">
-              ${escapeHtml(String(log.judgment || '判定なし'))}
-            </span>
-          </div>
-        `;
-
-        container.appendChild(card);
-      });
-    }
-
-    function updateMeterCompareHistoryEntryCount(count) {
-      const countText = `${Number(count) || 0}件`;
-      const entry = document.getElementById('meterCompareHistoryCount');
-      const view = document.getElementById('meterCompareHistoryViewCount');
-      if (entry) entry.innerText = countText;
-      if (view) view.innerText = countText;
-    }
-
-    function openMeterCompareHistoryView() {
-      renderMeterCompareHistory('meterCompareHistoryViewContainer');
-      const modal = document.getElementById('meterCompareHistoryViewModal');
-      if (modal) modal.classList.remove('hidden');
-    }
-
-    function closeMeterCompareHistoryView() {
-      const modal = document.getElementById('meterCompareHistoryViewModal');
-      if (modal) modal.classList.add('hidden');
-    }
-
-    function deleteMeterCompareHistory(id) {
-      const logs = loadMeterCompareLogs();
-      const next = logs.filter(log => Number(log.id) !== Number(id));
-
-      try {
-        localStorage.setItem('taxi_meter_compare_logs', JSON.stringify(next));
-      } catch (e) {}
-
-      renderMeterCompareHistory();
-      if (!document.getElementById('meterCompareHistoryViewModal')?.classList.contains('hidden')) {
-        renderMeterCompareHistory('meterCompareHistoryViewContainer');
-      }
-    }
-
-    function clearMeterCompareHistory() {
-      const logs = loadMeterCompareLogs();
-      if (logs.length === 0) return;
-
-      if (!confirm('実メーター比較履歴をすべて削除しますか？')) return;
-
-      try {
-        localStorage.removeItem('taxi_meter_compare_logs');
-      } catch (e) {}
-
-      renderMeterCompareHistory();
-      if (!document.getElementById('meterCompareHistoryViewModal')?.classList.contains('hidden')) {
-        renderMeterCompareHistory('meterCompareHistoryViewContainer');
-      }
-    }
-
-
-    function closeMeterCompareAnalysis() {
-      const modal = document.getElementById('meterCompareAnalysisModal');
-      if (modal) modal.classList.add('hidden');
-    }
-
-    function findRideRecordForCompare(compareLog) {
-      if (!compareLog || !Array.isArray(rideLogs)) return null;
-      const targetTime = Date.parse(String(compareLog.date || '').replace(/\\//g, '-'));
-      const targetDistance = Number(compareLog.distance);
-      const targetTimeSec = Number(compareLog.timeSec);
-      let best = null, bestScore = Infinity;
-
-      rideLogs.forEach(log => {
-        if (!log) return;
-        const d = Number(log.occupiedDistance ?? log.distance);
-        const t = Number(log.occupiedSeconds ?? log.timeSec);
-        const logTime = Date.parse(String(log.date || '').replace(/\\//g, '-'));
-        let score = 0;
-        score += Number.isFinite(targetDistance) && Number.isFinite(d)
-          ? Math.min(Math.abs(targetDistance - d) * 100, 500) : 200;
-        score += Number.isFinite(targetTimeSec) && Number.isFinite(t)
-          ? Math.min(Math.abs(targetTimeSec - t) / 10, 300) : 100;
-        score += Number.isFinite(targetTime) && Number.isFinite(logTime)
-          ? Math.min(Math.abs(targetTime - logTime) / 60000, 300) : 100;
-        if (score < bestScore) { bestScore = score; best = log; }
-      });
-      return bestScore <= 180 ? best : null;
-    }
-
-    function formatAnalysisYen(value) {
-      const n = Number(value) || 0;
-      return `${n >= 0 ? '+' : '-'}¥${Math.abs(Math.round(n)).toLocaleString()}`;
-    }
-
-    function openMeterCompareAnalysis(id) {
-      const logs = loadMeterCompareLogs();
-      const compareLog = logs.find(log => Number(log.id) === Number(id));
-      if (!compareLog) {
-        showModal('分析できません', 'この比較履歴が見つかりません。');
-        return;
-      }
-
-      const ride = findRideRecordForCompare(compareLog);
-      const appFare = Number(compareLog.appFare) || 0;
-      const actualFare = Number(compareLog.actualFare) || 0;
-      const diff = actualFare - appFare;
-      const distance = Number(compareLog.distance) || 0;
-      const timeSec = Number(compareLog.timeSec) || 0;
-      const rows = [];
-
-      const addRow = (label, value, note, cls='text-slate-200') => {
-        rows.push(`
-          <div class="rounded-xl bg-slate-950/60 border border-slate-800 p-3">
-            <div class="flex items-start justify-between gap-3">
-              <span class="text-[10px] text-slate-500">${label}</span>
-              <b class="text-xs ${cls} text-right">${value}</b>
-            </div>
-            ${note ? `<div class="text-[10px] text-slate-500 leading-relaxed mt-1">${note}</div>` : ''}
-          </div>`);
-      };
-
-      addRow('差額', formatAnalysisYen(diff),
-        diff === 0 ? '実メーターとアプリの金額は一致しています。' :
-        diff > 0 ? '実メーターの方がアプリより高い結果です。' :
-        '実メーターの方がアプリより安い結果です。',
-        diff === 0 ? 'text-emerald-400' : diff > 0 ? 'text-red-400' : 'text-amber-300');
-
-      addRow('走行条件', `${distance.toFixed(2)} km / ${formatDuration(timeSec)}`,
-        '比較履歴に保存されている実車距離・実車時間です。');
-
-      if (ride) {
-        const night = ride.isNight === true;
-        const dispatch = ride.isDispatch === true;
-        const pickupDistance = Number(ride.pickupDistance) || 0;
-        const occupiedDistance = Number(ride.occupiedDistance ?? ride.distance) || 0;
-        const totalRouteDistance = Number(ride.totalRouteDistance) || (pickupDistance + occupiedDistance);
-        const pickupSeconds = Number(ride.pickupSeconds) || 0;
-        const occupiedSeconds = Number(ride.occupiedSeconds ?? ride.timeSec) || 0;
-        const occupiedRate = Number(ride.occupiedRate);
-        const routeCount = Array.isArray(ride.routePoints) ? ride.routePoints.length : 0;
-
-        addRow('走行履歴との照合', '候補データあり',
-          `距離 ${occupiedDistance.toFixed(3)} km / 実車 ${formatDuration(occupiedSeconds)} / 迎車 ${pickupDistance.toFixed(3)} km`);
-
-        addRow('低速・時間距離併用',
-          occupiedSeconds > 0 ? '影響あり得る' : '判定材料なし',
-          '現在のアプリは低速時の時間を10km/h相当の距離に換算してメーター進行距離へ加算しています。',
-          occupiedSeconds > 0 ? 'text-amber-300' : 'text-slate-400');
-
-        addRow('夜間割増', night ? 'あり' : 'なし',
-          night ? '夜間時はアプリの距離加算単位が変更されるため、実メーター側との設定差を確認する対象です。' : 'この走行記録では夜間割増は記録されていません。',
-          night ? 'text-amber-300' : 'text-slate-400');
-
-        addRow('迎車料金', dispatch ? 'あり ¥500' : 'なし',
-          dispatch ? '迎車料金が適用された走行です。実メーター側でも同じ扱いだったか確認します。' : 'この走行記録では迎車料金は適用されていません。',
-          dispatch ? 'text-amber-300' : 'text-slate-400');
-
-        addRow('実車率', Number.isFinite(occupiedRate) ? `${occupiedRate.toFixed(1)}%` : '記録なし',
-          `総走行 ${totalRouteDistance.toFixed(3)} km / 迎車 ${pickupDistance.toFixed(3)} km / 迎車時間 ${formatDuration(pickupSeconds)}`);
-
-        addRow('GPSルート', routeCount ? `${routeCount}点保存` : '保存なし',
-          routeCount ? '保存されたGPSルートがあり、距離計算のズレを調査する材料があります。' : 'この走行はルート座標が削除済み、または保存されていません。',
-          routeCount ? 'text-cyan-300' : 'text-slate-400');
-      } else {
-        addRow('走行履歴照合', '一致する記録を特定できませんでした',
-          '比較履歴には現在、走行記録IDが保存されていないため、日時・距離・時間から候補を推定しています。',
-          'text-amber-300');
-      }
-
-      const overall = diff === 0
-        ? '金額差はありません。'
-        : Math.abs(diff) <= METER_COMPARE_TOLERANCE_YEN
-          ? '差額は±¥100以内です。距離・低速時間・加算タイミングを重点確認します。'
-          : '±¥100を超える差です。距離、低速時間、夜間設定、迎車料金、GPSルートを順番に確認してください。';
-
-      document.getElementById('meterCompareAnalysisDate').innerText =
-        `${compareLog.date || ''}　アプリ ¥${appFare.toLocaleString()} / 実メーター ¥${actualFare.toLocaleString()}`;
-
-      document.getElementById('meterCompareAnalysisContent').innerHTML = `
-        <div class="rounded-2xl border border-cyan-500/20 bg-cyan-950/20 p-3 mb-3">
-          <div class="text-[10px] text-cyan-400 font-bold mb-1">分析結果</div>
-          <div class="text-xs text-slate-200 leading-relaxed">${overall}</div>
-        </div>
-        <div class="space-y-2">${rows.join('')}</div>
-        <div class="mt-3 rounded-xl border border-slate-800 bg-slate-950/50 p-3">
-          <div class="text-[10px] text-slate-500">注意</div>
-          <div class="text-[10px] text-slate-500 leading-relaxed mt-1">
-            保存されたアプリデータから原因候補を整理する分析です。
-            実メーター側の加算距離・加算秒数は保存されていないため、原因を100%断定するものではありません。
-          </div>
-        </div>`;
-
-      document.getElementById('meterCompareAnalysisModal').classList.remove('hidden');
-    }
-
-    function finishMeterCompare() {
-      updateMeterComparePreview();
-
-      const input = document.getElementById('meterCompareFareInput');
-      const actualFare = Number(input?.value);
-      if (!Number.isFinite(actualFare) || actualFare <= 0 || !meterCompareResult) {
-        showModal("入力確認", "実メーターの金額を入力してください。");
-        return;
-      }
-
-      const result = meterCompareResult;
-      const compareRecord = {
-        id: Date.now(),
-        date: new Date().toLocaleString('ja-JP'),
-        appFare: result.appFare,
-        actualFare: result.actualFare,
-        diff: result.diff,
-        absDiff: result.absDiff,
-        errorRate: result.errorRate,
-        judgment: result.judgment,
-        distance: Number(totalDistance.toFixed(2)),
-        timeSec: accumulatedSeconds
-      };
-
-      let logs = loadMeterCompareLogs();
-      logs.unshift(compareRecord);
-      logs = logs.slice(0, 200);
-      try {
-        localStorage.setItem('taxi_meter_compare_logs', JSON.stringify(logs));
-      } catch (e) {}
-      renderMeterCompareHistory();
-      if (!document.getElementById('meterCompareHistoryViewModal')?.classList.contains('hidden')) {
-        renderMeterCompareHistory('meterCompareHistoryViewContainer');
-      }
-
-      closeMeterCompareModal();
-
-      const diffText = result.diff > 0
-        ? `実メーターが¥${result.diff.toLocaleString()}高い`
-        : result.diff < 0
-          ? `アプリが¥${Math.abs(result.diff).toLocaleString()}高い`
-          : '完全一致';
-
-      showSaveCompleteModal(
-        "実メーター比較完了",
-        `アプリ ¥${result.appFare.toLocaleString()} / 実メーター ¥${result.actualFare.toLocaleString()} / ${diffText} / 判定：${result.judgment}`
-      );
-
-      // 比較モードは1運行ごとのテストとして終了。
-      isMeterCompareMode = false;
-      const btn = document.getElementById('meterCompareToggleBtn');
-      if (btn) {
-        btn.innerText = "実メーター比較";
-        btn.className = "text-[10px] bg-slate-800 hover:bg-slate-700 text-cyan-400 px-2 py-0.5 rounded border border-slate-700 transition";
-      }
-
-      // 通常の精算履歴には混ぜず、比較データだけ別LocalStorageへ保存。
-      totalDistance = 0;
-      accumulatedSeconds = 0;
-      currentFare = 0;
-      timeFareAdded = 0;
-      meterProgressDistance = 0;
-      lastPosition = null;
-      latestGPSPosition = null;
-      lastRoutedPosition = null;
-      lastRoutedTimestamp = 0;
-      lastGPSAcceptedTimestamp = 0;
-      speedKmh = 0;
-      routePoints = [];
-      startTime = null;
-      engageStartAt = null;
-      occupiedStartAt = null;
-      dropoffAt = null;
-      pickupDistance = 0;
-      isDispatchApplied = false;
-      isOccupiedStarted = false;
-      document.getElementById('dispatchFeeTag').classList.add('hidden');
-
-      executeSetStatus('VACANT');
-      updateDisplay();
     }
 
 
@@ -1598,11 +935,7 @@
         addRoutePoint(endLocation.lat, endLocation.lng, true);
       }
 
-      if (isMeterCompareMode) {
-        openMeterCompareModal();
-      } else {
-        openSettlementModal();
-      }
+      openSettlementModal();
 
       // モーダル表示後も、確定処理が終わるまでは二重操作を受け付けない
       if (vacantBtn) {
@@ -1736,54 +1069,159 @@
       input.dispatchEvent(new Event('input', { bubbles: true }));
     }
 
+    // モード切替：標準はライドシェア（ライドラ）。運行中は切替不可。
+    let appMode = 'RIDERA';
+
+    function updateAppModeUI() {
+      const tag = document.getElementById('modeIndicatorTag');
+      if (!tag) return;
+      if (appMode === 'TAXIDRIVER') {
+        tag.innerText = 'タクドラモード';
+        tag.className = 'text-[10px] bg-amber-950/60 hover:bg-amber-900/70 text-amber-300 px-2.5 py-1 rounded border border-amber-700/60 font-mono transition';
+      } else {
+        tag.innerText = 'ライドラモード';
+        tag.className = 'text-[10px] bg-cyan-950/60 hover:bg-cyan-900/70 text-cyan-300 px-2.5 py-1 rounded border border-cyan-700/60 font-mono transition';
+      }
+    }
+
+    function toggleAppMode() {
+      if (appState !== 'VACANT') {
+        showModal('モード切替', '運行中はモードを切り替えできません。空車時に切り替えてください。');
+        return;
+      }
+      appMode = appMode === 'RIDERA' ? 'TAXIDRIVER' : 'RIDERA';
+      updateAppModeUI();
+      updateDisplay();
+    }
+
     function openSettlementModal() {
+      const distanceFixedFare = calculateDistanceBasedFixedFare(totalDistance);
       document.getElementById('settleFareText').innerText = `¥${currentFare.toLocaleString()}`;
       const mins = Math.floor(accumulatedSeconds / 60).toString().padStart(2, '0');
       const secs = (accumulatedSeconds % 60).toString().padStart(2, '0');
       document.getElementById('settleMetaText').innerText = `${totalDistance.toFixed(2)}km / ${mins}:${secs}`;
+      document.getElementById('settleFixedFareDistanceText').innerText = `¥${distanceFixedFare.toLocaleString()}`;
       document.getElementById('settleStartAddr').innerText = startLocation.address;
       document.getElementById('settleEndAddr').innerText = endLocation.address;
-      
-      // Reset input to 0 or empty so previous value does not persist
-      document.getElementById('modalFixedFareInput').value = '';
+
+      const title = document.getElementById('settlementTitle');
+      const inputLabel = document.getElementById('settlementInputLabel');
+      const input = document.getElementById('modalFixedFareInput');
+      const result = document.getElementById('settlementCompareResult');
+      const saveBtn = document.getElementById('settlementSaveBtn');
+
+      if (appMode === 'TAXIDRIVER') {
+        title.innerHTML = '<i class="fa-solid fa-taxi"></i><span>タクドラモード：実メーター比較</span>';
+        inputLabel.innerText = '実際のタクシーメーター金額を入力';
+        input.placeholder = '例: 1100';
+        saveBtn.innerText = '比較結果を保存して空車にする';
+        result.innerHTML = `
+          <div class="grid grid-cols-3 gap-2 text-[10px]">
+            <div><span class="text-slate-500 block">アプリメーター</span><b class="text-cyan-300">¥${currentFare.toLocaleString()}</b></div>
+            <div><span class="text-slate-500 block">距離算出</span><b class="text-emerald-300">¥${distanceFixedFare.toLocaleString()}</b></div>
+            <div><span class="text-slate-500 block">差額</span><b class="text-slate-300">入力後に表示</b></div>
+          </div>`;
+      } else {
+        title.innerHTML = '<i class="fa-solid fa-car-side"></i><span>ライドラモード：GO請求額比較</span>';
+        inputLabel.innerText = 'GOアプリの請求金額（事前確定運賃）を入力';
+        input.placeholder = '例: 3500';
+        saveBtn.innerText = '比較結果を保存して空車にする';
+        result.innerHTML = `
+          <div class="grid grid-cols-3 gap-2 text-[10px]">
+            <div><span class="text-slate-500 block">タクシーメーター</span><b class="text-cyan-300">¥${currentFare.toLocaleString()}</b></div>
+            <div><span class="text-slate-500 block">距離算出</span><b class="text-emerald-300">¥${distanceFixedFare.toLocaleString()}</b></div>
+            <div><span class="text-slate-500 block">差額</span><b class="text-slate-300">入力後に表示</b></div>
+          </div>`;
+      }
+
+      input.value = '';
       document.getElementById('settlementModal').classList.remove('hidden');
-      document.getElementById('modalFixedFareInput').blur();
+      input.blur();
     }
 
     function closeSettlementModal() {
       document.getElementById('settlementModal').classList.add('hidden');
     }
 
+    function updateSettlementComparePreview() {
+      const input = document.getElementById('modalFixedFareInput');
+      const result = document.getElementById('settlementCompareResult');
+      if (!input || !result) return;
+      const entered = Number(input.value);
+      if (!Number.isFinite(entered) || entered <= 0) return;
+
+      const meterFare = Number(currentFare) || 0;
+      const distanceFixedFare = calculateDistanceBasedFixedFare(totalDistance);
+      const externalVsMeter = entered - meterFare;
+      const externalVsDistance = entered - distanceFixedFare;
+      const distanceVsMeter = distanceFixedFare - meterFare;
+
+      const signed = (n) => `${n > 0 ? '+' : ''}¥${n.toLocaleString()}`;
+
+      if (appMode === 'TAXIDRIVER') {
+        result.innerHTML = `
+          <div class="text-[10px] font-bold text-amber-300 mb-2">タクドラ比較</div>
+          <div class="grid grid-cols-3 gap-2 text-[10px]">
+            <div><span class="text-slate-500 block">実メーター</span><b class="text-white">¥${entered.toLocaleString()}</b></div>
+            <div><span class="text-slate-500 block">アプリとの差</span><b class="${externalVsMeter === 0 ? 'text-emerald-400' : externalVsMeter > 0 ? 'text-red-400' : 'text-cyan-300'}">${signed(externalVsMeter)}</b></div>
+            <div><span class="text-slate-500 block">距離算出との差</span><b class="${externalVsDistance === 0 ? 'text-emerald-400' : 'text-amber-300'}">${signed(externalVsDistance)}</b></div>
+          </div>
+          <div class="mt-2 pt-2 border-t border-slate-800 text-[10px] text-slate-500">距離算出事前確定 ¥${distanceFixedFare.toLocaleString()} / メーター→距離算出差 ${signed(distanceVsMeter)}</div>`;
+      } else {
+        result.innerHTML = `
+          <div class="text-[10px] font-bold text-cyan-300 mb-2">ライドラ比較（GO請求額）</div>
+          <div class="grid grid-cols-3 gap-2 text-[10px]">
+            <div><span class="text-slate-500 block">GO請求</span><b class="text-white">¥${entered.toLocaleString()}</b></div>
+            <div><span class="text-slate-500 block">GO→メーター</span><b class="${externalVsMeter === 0 ? 'text-emerald-400' : externalVsMeter > 0 ? 'text-amber-300' : 'text-cyan-300'}">${signed(externalVsMeter)}</b></div>
+            <div><span class="text-slate-500 block">GO→距離算出</span><b class="${externalVsDistance === 0 ? 'text-emerald-400' : 'text-amber-300'}">${signed(externalVsDistance)}</b></div>
+          </div>
+          <div class="mt-2 pt-2 border-t border-slate-800 text-[10px] text-slate-500">タクシーメーター ¥${meterFare.toLocaleString()} / 距離算出 ¥${distanceFixedFare.toLocaleString()} / メーター→距離算出差 ${signed(distanceVsMeter)}</div>`;
+      }
+    }
+
     function saveRideWithFixedFare() {
-      const modalInput = document.getElementById('modalFixedFareInput').value;
-      const fixedFare = modalInput ? parseFloat(modalInput) : 0;
-      
-      if (fixedFare <= 0) {
-        showModal("入力確認", "ライドシェアの事前確定運賃を入力してください。");
+      const input = document.getElementById('modalFixedFareInput');
+      const enteredFare = Number(input?.value);
+      if (!Number.isFinite(enteredFare) || enteredFare <= 0) {
+        showModal('入力確認', appMode === 'TAXIDRIVER' ? '実際のタクシーメーター金額を入力してください。' : 'GOアプリの請求金額（事前確定運賃）を入力してください。');
         return;
       }
 
+      const distanceFixedFare = calculateDistanceBasedFixedFare(totalDistance);
+      const meterFare = Number(currentFare) || 0;
+      const externalVsMeter = enteredFare - meterFare;
+      const externalVsDistance = enteredFare - distanceFixedFare;
+      const distanceVsMeter = distanceFixedFare - meterFare;
+      const modeLabel = appMode === 'TAXIDRIVER' ? 'タクドラ' : 'ライドラ';
+
       closeSettlementModal();
 
-      const diff = fixedFare - currentFare;
       const record = {
         id: Date.now(),
         date: new Date().toLocaleString('ja-JP'),
-        fare: currentFare,
+        mode: appMode,
+        modeLabel,
+        fare: meterFare,
         distance: totalDistance.toFixed(2),
         timeSec: accumulatedSeconds,
         isNight: isNightActive(),
         isDispatch: isDispatchApplied,
-        fixedFare: fixedFare,
-        diff: diff,
+        // 従来履歴との互換用。ライドラはGO請求額、タクドラは距離算出事前確定運賃。
+        fixedFare: appMode === 'RIDERA' ? enteredFare : distanceFixedFare,
+        diff: appMode === 'RIDERA' ? externalVsMeter : distanceVsMeter,
+        externalFare: enteredFare,
+        distanceFixedFare,
+        externalVsMeter,
+        externalVsDistance,
+        distanceVsMeter,
         startAddr: startLocation.address,
         endAddr: endLocation.address,
         startLat: startLocation.lat,
         startLng: startLocation.lng,
         endLat: endLocation.lat,
         endLng: endLocation.lng,
-        engageStartAt: engageStartAt,
-        occupiedStartAt: occupiedStartAt,
+        engageStartAt,
+        occupiedStartAt,
         dropoffAt: dropoffAt || new Date().toISOString(),
         pickupDistance: Number(pickupDistance.toFixed(3)),
         occupiedDistance: Number(totalDistance.toFixed(3)),
@@ -1795,18 +1233,15 @@
       };
 
       rideLogs.unshift(record);
-
-      // ルート座標だけは最新100件まで。
-      // 101件目以降の古い履歴は、運賃・距離・時間・住所などを残して
-      // routePoints だけ削除し、LocalStorageの肥大化を防ぐ。
       trimOldRouteHistory();
+      try { localStorage.setItem('taxi_ride_logs_pro_saitama', JSON.stringify(rideLogs)); } catch(e) {}
 
-      try {
-        localStorage.setItem('taxi_ride_logs_pro_saitama', JSON.stringify(rideLogs));
-      } catch(e) {}
+      const message = appMode === 'TAXIDRIVER'
+        ? `実メーター ¥${enteredFare.toLocaleString()} / アプリ ¥${meterFare.toLocaleString()} / 距離算出 ¥${distanceFixedFare.toLocaleString()} / アプリ差 ${externalVsMeter >= 0 ? '+' : ''}¥${externalVsMeter.toLocaleString()} / 距離算出差 ${externalVsDistance >= 0 ? '+' : ''}¥${externalVsDistance.toLocaleString()}`
+        : `GO請求 ¥${enteredFare.toLocaleString()} / タクシーメーター ¥${meterFare.toLocaleString()} / 距離算出 ¥${distanceFixedFare.toLocaleString()} / GO→メーター ${externalVsMeter >= 0 ? '+' : ''}¥${externalVsMeter.toLocaleString()} / GO→距離算出 ${externalVsDistance >= 0 ? '+' : ''}¥${externalVsDistance.toLocaleString()}`;
 
-      showSaveCompleteModal("精算・運行データ保存", `運賃: ¥${currentFare.toLocaleString()} (事前確定: ¥${fixedFare.toLocaleString()}) の運行データを記録しました。`);
-      
+      showSaveCompleteModal(`${modeLabel}比較結果を保存`, message);
+
       totalDistance = 0;
       accumulatedSeconds = 0;
       currentFare = 0;
@@ -1827,7 +1262,6 @@
       isDispatchApplied = false;
       isOccupiedStarted = false;
       document.getElementById('dispatchFeeTag').classList.add('hidden');
-      
       executeSetStatus('VACANT');
       updateDisplay();
     }
@@ -2227,8 +1661,62 @@
       }
     }
 
+    function calculateDistanceBasedFixedFare(distanceKm) {
+      const distance = Math.max(0, Number(distanceKm) || 0);
+      const nightMode = isNightActive();
+
+      // 加算段階は常に通常の走行距離条件で決定する。
+      // 深夜になっても「走れる距離を20%短縮」は行わない。
+      let step = 0;
+      if (distance > BASE_DISTANCE) {
+        const extraDistance = distance - BASE_DISTANCE;
+        step = Math.ceil(extraDistance / DISTANCE_UNIT);
+      }
+
+      let theoreticalFare;
+
+      if (nightMode) {
+        // 迎車¥500は割増対象外。
+        // 初乗り¥600×1.2=¥720、加算¥120×1.2=¥144。
+        // 先に理論額を累積し、最後に10円未満を切り捨てる。
+        theoreticalFare = (FIXED_BASE_FARE * FIXED_FARE_COEFFICIENT)
+          + (FIXED_DISTANCE_FARE_UNIT * FIXED_FARE_COEFFICIENT * step);
+
+        if (isDispatchApplied) {
+          theoreticalFare += DISPATCH_FEE;
+        }
+
+        const nightDisplayFare = Math.floor(theoreticalFare / 10) * 10;
+
+        console.debug('[事前確定運賃][深夜]', {
+          nightMode: true,
+          nightStep: step,
+          nightTheoreticalFare: theoreticalFare,
+          nightDisplayFare
+        });
+
+        return nightDisplayFare;
+      }
+
+      // 通常：¥600 + ¥120×加算回数 + 迎車¥500。
+      theoreticalFare = FIXED_BASE_FARE + (FIXED_DISTANCE_FARE_UNIT * step);
+      if (isDispatchApplied) {
+        theoreticalFare += DISPATCH_FEE;
+      }
+
+      return Math.floor(theoreticalFare / 10) * 10;
+    }
+
+    function updateDistanceBasedFixedFareDisplay() {
+      const el = document.getElementById('fixedFareDistanceDisplay');
+      if (!el) return;
+      const fare = calculateDistanceBasedFixedFare(totalDistance);
+      el.innerText = `¥${fare.toLocaleString()}`;
+    }
+
     function updateDisplay() {
       document.getElementById('fareDisplay').innerText = `¥${currentFare.toLocaleString()}`;
+      updateDistanceBasedFixedFareDisplay();
       updateMeterProgressInfo();
       document.getElementById('distanceDisplay').innerText = totalDistance.toFixed(2);
       
@@ -2330,7 +1818,6 @@
     function renderHistoryList() {
       const container = document.getElementById('historyListContainer');
       container.innerHTML = '';
-      updateMeterCompareHistoryEntryCount(loadMeterCompareLogs().length);
       renderTodaySummary();
 
       let sumFare = 0;
@@ -2436,7 +1923,7 @@
           </span>
           <span class="flex items-center gap-2">
             <span class="text-slate-300">計: ¥${groupFare.toLocaleString()}</span>
-            <span class="text-amber-300">確定: ¥${groupFixed.toLocaleString()}</span>
+            <span class="text-amber-300">入力/確定: ¥${groupFixed.toLocaleString()}</span>
             <i class="fa-solid fa-chevron-down text-slate-500 text-[9px] transition-transform"></i>
           </span>
         `;
@@ -2450,19 +1937,16 @@
           const secs = (Number(log.timeSec) || 0) % 60;
           const timeStr = `${mins}分${secs}秒`;
 
-          let diffColor = "text-slate-400";
-          let diffText = "比較なし";
-          if (Number(log.fixedFare) > 0) {
-            if (Number(log.diff) > 0) {
-              diffColor = "text-amber-400";
-              diffText = `ライドシェア+¥${Number(log.diff).toLocaleString()}`;
-            } else if (Number(log.diff) < 0) {
-              diffColor = "text-cyan-400";
-              diffText = `メーター+¥${Math.abs(Number(log.diff)).toLocaleString()}`;
-            } else {
-              diffText = `差額なし`;
-            }
-          }
+          const isTaxiMode = log.mode === 'TAXIDRIVER';
+          const modeLabel = isTaxiMode ? 'タクドラ' : 'ライドラ';
+          const modeTag = isTaxiMode
+            ? '<span class="bg-amber-950 text-amber-300 px-1.5 py-0.5 rounded text-[9px] border border-amber-800">タクドラ</span>'
+            : '<span class="bg-cyan-950 text-cyan-300 px-1.5 py-0.5 rounded text-[9px] border border-cyan-800">ライドラ</span>';
+          const externalFare = Number(log.externalFare ?? (isTaxiMode ? 0 : log.fixedFare)) || 0;
+          const distanceFixedFare = Number(log.distanceFixedFare ?? (isTaxiMode ? log.fixedFare : 0)) || 0;
+          const meterDiff = Number(log.externalVsMeter ?? (isTaxiMode ? log.diff : 0)) || 0;
+          const externalDistanceDiff = Number(log.externalVsDistance ?? (isTaxiMode ? 0 : (log.diff || 0))) || 0;
+          const distanceMeterDiff = Number(log.distanceVsMeter ?? (distanceFixedFare - Number(log.fare || 0))) || 0;
 
           const m = getLogMetrics(log);
           const tags = [];
@@ -2505,9 +1989,19 @@
                 <span>総走行 <b class="text-slate-300">${m.totalKm.toFixed(2)}km</b></span>
               </div>
 
-              <div class="flex items-center justify-between gap-2 bg-slate-950 rounded-lg px-3 py-2 border border-slate-800">
-                <div class="text-[10px] text-slate-400">事前確定 <b class="text-amber-300">¥${Number(log.fixedFare) > 0 ? Number(log.fixedFare).toLocaleString() : '0'}</b></div>
-                <div class="text-[10px] ${diffColor} font-bold">${diffText}</div>
+              <div class="bg-slate-950 rounded-lg px-3 py-2 border border-slate-800 space-y-1.5">
+                <div class="flex items-center justify-between gap-2">
+                  <div class="text-[10px] text-slate-400">モード <b class="text-slate-200">${modeLabel}</b></div>
+                  <div class="text-[10px] text-emerald-300">距離算出 <b>¥${distanceFixedFare.toLocaleString()}</b></div>
+                </div>
+                <div class="grid grid-cols-2 gap-2 text-[10px] font-mono">
+                  <div class="text-slate-500">${isTaxiMode ? '実メーター' : 'GO請求'} <b class="text-white">¥${externalFare.toLocaleString()}</b></div>
+                  <div class="text-right ${meterDiff === 0 ? 'text-emerald-400' : meterDiff > 0 ? 'text-amber-300' : 'text-cyan-300'}">${isTaxiMode ? '実メーター→アプリ' : 'GO→メーター'} ${meterDiff >= 0 ? '+' : ''}¥${meterDiff.toLocaleString()}</div>
+                </div>
+                <div class="grid grid-cols-2 gap-2 text-[10px] font-mono">
+                  <div class="text-slate-500">距離算出との差 <b class="${externalDistanceDiff === 0 ? 'text-emerald-400' : 'text-amber-300'}">${externalDistanceDiff >= 0 ? '+' : ''}¥${externalDistanceDiff.toLocaleString()}</b></div>
+                  <div class="text-right text-slate-500">メーター→距離算出 <b class="${distanceMeterDiff === 0 ? 'text-emerald-400' : 'text-cyan-300'}">${distanceMeterDiff >= 0 ? '+' : ''}¥${distanceMeterDiff.toLocaleString()}</b></div>
+                </div>
               </div>
 
               <div class="flex items-center gap-2 pt-1">
@@ -2769,30 +2263,5 @@
     }
 
   </script>
-  <!-- 走行・実車記録履歴から開く実メーター比較履歴 -->
-  <div id="meterCompareHistoryViewModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-[60] hidden flex items-center justify-center p-4">
-    <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-lg w-full shadow-2xl overflow-hidden flex flex-col">
-      <div class="p-4 border-b border-slate-800 flex justify-between items-center bg-slate-950">
-        <h3 class="font-bold text-sm text-slate-200 flex items-center gap-2">
-          <i class="fa-solid fa-scale-balanced text-cyan-400"></i>
-          <span>実メーター比較履歴</span>
-        </h3>
-        <button type="button" onclick="closeMeterCompareHistoryView()" class="text-slate-400 hover:text-slate-200 p-1 rounded-lg">
-          <i class="fa-solid fa-xmark text-lg"></i>
-        </button>
-      </div>
-      <div class="px-4 py-2 border-b border-slate-800 bg-slate-950/60 flex items-center justify-between">
-        <span class="text-[10px] text-slate-400">保存された比較結果</span>
-        <span id="meterCompareHistoryViewCount" class="text-[10px] font-mono text-cyan-400">0件</span>
-      </div>
-      <div id="meterCompareHistoryViewContainer" class="p-4 overflow-y-auto flex-1 space-y-2 max-h-[68vh]"></div>
-      <div class="p-3 border-t border-slate-800 bg-slate-950 flex justify-end">
-        <button type="button" onclick="closeMeterCompareHistoryView()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs px-4 py-2 rounded-lg font-medium transition">
-          閉じる
-        </button>
-      </div>
-    </div>
-  </div>
-
 </body>
 </html>
