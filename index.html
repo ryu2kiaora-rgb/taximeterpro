@@ -2370,7 +2370,7 @@
       }
 
       replayData = buildReplayData(log, points);
-      replaySpeed = 1;
+      replaySpeed = 5;
       replayPlaying = false;
       replayLastFrame = 0;
       cancelAnimationFrame(replayAnimationId);
@@ -2487,17 +2487,34 @@
         });
       }
 
+      // 実メーターと同じ「距離＋低速時間」の進行量を再生用に作る。
+      // 低速（10km/h以下）は、実機と同じく10km/h相当の距離へ時間を換算。
+      // それ以外は実際に記録されたGPS区間距離をメーター進行へ加算する。
       let elapsed=0, occ=0, meterProgress=0, routeDist=0;
       segments.forEach(seg => {
-        const speed = seg.dt>0 ? seg.dist/(seg.dt/3600000) : 0;
-        const meterAdd = seg.phase==='red' ? (speed <= LOW_SPEED_THRESHOLD ? (10/3600)*(seg.dt/1000) : seg.dist) : 0;
-        if (seg.phase==='red') { occ += seg.dist; meterProgress += meterAdd; }
+        const speed = seg.dt > 0 ? seg.dist / (seg.dt / 3600000) : 0;
+        const meterAdd = seg.phase === 'red'
+          ? (speed <= LOW_SPEED_THRESHOLD
+              ? (10 / 3600) * (seg.dt / 1000)
+              : seg.dist)
+          : 0;
+
+        if (seg.phase === 'red') {
+          occ += seg.dist;
+          meterProgress += meterAdd;
+        }
         routeDist += seg.dist;
         elapsed += seg.dt;
-        seg.endElapsed=elapsed;
-        seg.occDistance=occ;
-        seg.meterProgress=meterProgress;
-        seg.routeDistance=routeDist;
+
+        // 各区間の開始時点も保存しておくことで、再生途中でも
+        // 「時間加算で増えた進行距離」を正しく線形補間できる。
+        seg.startElapsed = elapsed - seg.dt;
+        seg.startMeterProgress = meterProgress - meterAdd;
+        seg.endElapsed = elapsed;
+        seg.occDistance = occ;
+        seg.meterProgress = meterProgress;
+        seg.meterAdd = meterAdd;
+        seg.routeDistance = routeDist;
       });
 
       const finalTargetFare = Number(log.fare)||0;
@@ -2541,13 +2558,16 @@
       const local=seg.dt>0?Math.min(1,Math.max(0,(ms-prevEnd)/seg.dt)):1;
       const lat=seg.a.lat+(seg.b.lat-seg.a.lat)*local;
       const lng=seg.a.lng+(seg.b.lng-seg.a.lng)*local;
-      const occ=seg.occDistance - seg.dist + seg.dist*local;
-      const meterProgress=seg.meterProgress - (seg.phase==='red' ? (seg.dist/(seg.dt>0?1:1)) : 0);
-      // 上の差分は低速補完と距離加算を共通化しづらいため、セグメント内を線形補間する。
-      const startMeter=seg.phase==='red' ? (seg.meterProgress - (seg.dt>0 ? (seg.dist) : 0)) : seg.meterProgress;
-      const meterEnd=seg.meterProgress;
-      const meterStart = (d.segments.indexOf(seg)>0) ? d.segments[d.segments.indexOf(seg)-1].meterProgress : 0;
-      const meterProg=Math.max(0,meterStart+(meterEnd-meterStart)*local);
+      const occStart = seg.occDistance - (seg.phase === 'red' ? seg.dist : 0);
+      const occ = occStart + (seg.phase === 'red' ? seg.dist * local : 0);
+
+      // ここが今回の修正点。
+      // セグメント内のメーター進行量は「GPS距離」だけではなく、
+      // 10km/h以下だった時間分も含めて補間する。
+      const meterStart = Number.isFinite(seg.startMeterProgress) ? seg.startMeterProgress : 0;
+      const meterEnd = Number.isFinite(seg.meterProgress) ? seg.meterProgress : meterStart;
+      const meterProg = Math.max(0, meterStart + (meterEnd - meterStart) * local);
+
       return {lat,lng,occDistance:Math.max(0,occ),meterProgress:meterProg,phase:seg.phase};
     }
 
