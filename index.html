@@ -874,16 +874,16 @@
             <div class="flex items-center justify-between text-[10px] font-mono text-slate-400 mb-2">
               <span id="replayDistanceText">距離 0.00km</span>
               <span id="replayTimeText">時間 00:00</span>
-              <span id="replaySpeedText">再生 ×1</span>
+              <span id="replaySpeedText">再生 ×5</span>
             </div>
             <div class="replay-progress"><div id="replayProgressBar"></div></div>
           </div>
 
           <div class="grid grid-cols-4 gap-1.5">
-            <button onclick="setReplaySpeed(0.5)" class="replay-speed-btn rounded-lg bg-slate-800 border border-slate-700 py-2 text-[10px] font-bold text-slate-300">×0.5</button>
-            <button onclick="setReplaySpeed(1)" class="replay-speed-btn rounded-lg bg-slate-800 border border-slate-700 py-2 text-[10px] font-bold text-slate-300">×1</button>
-            <button onclick="setReplaySpeed(3)" class="replay-speed-btn rounded-lg bg-slate-800 border border-slate-700 py-2 text-[10px] font-bold text-slate-300">×3</button>
+            <button onclick="setReplaySpeed(5)" class="replay-speed-btn rounded-lg bg-slate-800 border border-slate-700 py-2 text-[10px] font-bold text-slate-300">×5</button>
             <button onclick="setReplaySpeed(10)" class="replay-speed-btn rounded-lg bg-slate-800 border border-slate-700 py-2 text-[10px] font-bold text-slate-300">×10</button>
+            <button onclick="setReplaySpeed(20)" class="replay-speed-btn rounded-lg bg-slate-800 border border-slate-700 py-2 text-[10px] font-bold text-slate-300">×20</button>
+            <button onclick="setReplaySpeed(30)" class="replay-speed-btn rounded-lg bg-slate-800 border border-slate-700 py-2 text-[10px] font-bold text-slate-300">×30</button>
           </div>
 
           <div id="replayResult" class="hidden rounded-xl border border-emerald-800/60 bg-emerald-950/20 p-4 text-center">
@@ -2351,7 +2351,7 @@
     let replayMarker = null;
     let replayAnimationId = null;
     let replayData = null;
-    let replaySpeed = 1;
+    let replaySpeed = 5;
     let replayPlaying = false;
     let replayLastFrame = 0;
 
