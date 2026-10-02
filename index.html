@@ -853,7 +853,7 @@
       <div class="overflow-y-auto flex-1">
         <div class="relative">
           <div id="replayMap" class="w-full bg-slate-900"></div>
-          <div id="replayPhaseBadge" class="absolute top-2 left-2 z-[500] px-2 py-1 rounded-lg bg-slate-950/90 border border-slate-700 text-[10px] font-bold text-amber-300 shadow">迎車区間</div>
+          <div id="replayPhaseBadge" class="absolute bottom-2 left-2 z-[500] px-2 py-1 rounded-lg bg-slate-950/90 border border-slate-700 text-[10px] font-bold text-amber-300 shadow">迎車区間</div>
         </div>
 
         <div class="p-3 sm:p-4 space-y-3">
@@ -2389,12 +2389,16 @@
         }
         replayMap.invalidateSize({pan:false});
         if (replayRouteLine) replayMap.removeLayer(replayRouteLine);
+        if (window.replayTrailLayers) {
+          window.replayTrailLayers.forEach(layer => { try { replayMap.removeLayer(layer); } catch(e) {} });
+        }
+        window.replayTrailLayers = [];
+        replayRouteLine = null;
         if (replayMarker) replayMap.removeLayer(replayMarker);
-        replayRouteLine = L.polyline(points.map(p => [p.lat,p.lng]), {color:'#38bdf8',weight:5,opacity:.75}).addTo(replayMap);
         replayMarker = L.marker([points[0].lat,points[0].lng], {
           icon:L.divIcon({className:'replay-car',html:'🚕',iconSize:[28,28],iconAnchor:[14,14]})
         }).addTo(replayMap);
-        replayMap.fitBounds(replayRouteLine.getBounds(), {padding:[30,30],maxZoom:16});
+        replayMap.fitBounds(L.latLngBounds(points.map(p => [p.lat,p.lng])), {padding:[30,30],maxZoom:16});
       });
     }
 
@@ -2560,7 +2564,28 @@
       document.getElementById('replayTimeText').innerText=`時間 ${String(mm).padStart(2,'0')}:${String(ss).padStart(2,'0')}`;
       document.getElementById('replayProgressBar').style.width=`${progress}%`;
       document.getElementById('replayPhaseBadge').innerText=state.phase==='red'?'🔴 実車区間':'🟡 迎車区間';
-      document.getElementById('replayPhaseBadge').className=`absolute top-2 left-2 z-[500] px-2 py-1 rounded-lg bg-slate-950/90 border text-[10px] font-bold shadow ${state.phase==='red'?'border-red-700 text-red-300':'border-amber-700 text-amber-300'}`;
+      document.getElementById('replayPhaseBadge').className=`absolute bottom-2 left-2 z-[500] px-2 py-1 rounded-lg bg-slate-950/90 border text-[10px] font-bold shadow ${state.phase==='red'?'border-red-700 text-red-300':'border-amber-700 text-amber-300'}`;
+
+      // 車が通過した区間だけを軌跡として表示。未来のルートは表示しない。
+      if (replayMap && replayData && Array.isArray(replayData.segments)) {
+        if (window.replayTrailLayers) {
+          window.replayTrailLayers.forEach(layer => { try { replayMap.removeLayer(layer); } catch(e) {} });
+        }
+        window.replayTrailLayers = [];
+        const currentMs = Math.min(ms, replayData.durationMs);
+        replayData.segments.forEach((seg, index) => {
+          const segStart = index === 0 ? 0 : replayData.segments[index - 1].endElapsed;
+          if (currentMs <= segStart) return;
+          const ratio = seg.dt > 0 ? Math.min(1, Math.max(0, (currentMs - segStart) / seg.dt)) : 1;
+          const endLat = seg.a.lat + (seg.b.lat - seg.a.lat) * ratio;
+          const endLng = seg.a.lng + (seg.b.lng - seg.a.lng) * ratio;
+          const layer = L.polyline([[seg.a.lat,seg.a.lng],[endLat,endLng]], {
+            color: seg.phase === 'red' ? '#ef4444' : '#f59e0b',
+            weight: 5, opacity: .95, lineCap: 'round', lineJoin: 'round'
+          }).addTo(replayMap);
+          window.replayTrailLayers.push(layer);
+        });
+      }
       if(replayMarker){ replayMarker.setLatLng([state.lat,state.lng]); }
       if(ms>=replayData.durationMs-1){
         const diff=Math.abs(replayData.finalTargetFare-replayData.fixedTargetFare);
