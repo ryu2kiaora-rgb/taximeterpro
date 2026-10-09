@@ -428,20 +428,7 @@
         #settlementModal .settlement-keypad-modal > .mt-2 { margin-top: 4px !important; }
         #settlementModal .settlement-keypad-modal .h-9 { height: 30px !important; }
       }
-
-/* 走行シミュレーション */
-.replay-modal-panel{width:min(760px,96vw);height:min(92dvh,760px);max-height:92dvh;overflow:hidden;display:flex;flex-direction:column}
-#replayMap{height:clamp(220px,42vh,380px);min-height:220px}
-.replay-score{font-variant-numeric:tabular-nums}
-.replay-car{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:#0f172a;border:2px solid #38bdf8;box-shadow:0 0 14px rgba(56,189,248,.45);color:#fff;font-size:13px}
-.replay-progress{height:7px;border-radius:999px;background:#1e293b;overflow:hidden}
-.replay-progress > div{height:100%;width:0%;border-radius:999px;background:#22d3ee;transition:width .08s linear}
-@media (orientation:landscape) and (max-height:700px){
-  .replay-modal-panel{height:96dvh;max-height:96dvh}
-  #replayMap{height:34vh;min-height:150px}
-}
-
-  </style>
+</style>
 <style>
 /* 走行ルートビュー拡大 */
 #mapModal > div {
@@ -536,6 +523,17 @@
   @media (orientation: landscape) and (max-height: 700px) {
     .app-guide-shell { max-height: 96dvh; width:min(820px,96vw); }
   }
+</style>
+
+
+<style id="firstUseDisclaimerStyles">
+  #firstUseDisclaimer { position:fixed; inset:0; z-index:100000; display:none; align-items:center; justify-content:center; padding:12px; background:rgba(2,6,23,.96); }
+  #firstUseDisclaimer .disclaimer-panel { width:min(100%,560px); max-height:calc(100dvh - 24px); overflow-y:auto; background:#0f172a; color:#e2e8f0; border:1px solid #f59e0b; border-radius:18px; padding:20px; box-shadow:0 20px 70px rgba(0,0,0,.65); }
+  #firstUseDisclaimer .disclaimer-panel h2 { font-size:1.2rem; font-weight:800; color:#fbbf24; line-height:1.4; }
+  #firstUseDisclaimer .disclaimer-panel li { margin:.55rem 0; line-height:1.55; }
+  #firstUseDisclaimer .disclaimer-check { display:flex; gap:10px; align-items:flex-start; padding:12px; margin-top:14px; border:1px solid #475569; border-radius:12px; background:#1e293b; line-height:1.5; }
+  #firstUseDisclaimer .disclaimer-check input { width:20px; height:20px; flex:0 0 20px; margin-top:2px; accent-color:#f59e0b; }
+  #firstUseContinue:disabled { opacity:.4; cursor:not-allowed; }
 </style>
 
 </head>
@@ -838,70 +836,6 @@
     </div>
   </div>
 
-
-  <!-- Route Replay Modal -->
-  <div id="replayModal" class="fixed inset-0 bg-black/90 backdrop-blur-sm z-[75] hidden flex items-center justify-center p-2 sm:p-4">
-    <div class="replay-modal-panel bg-slate-950 border border-cyan-500/40 rounded-2xl shadow-2xl">
-      <div class="p-3 sm:p-4 border-b border-slate-800 flex items-center justify-between shrink-0">
-        <div>
-          <div class="text-[9px] text-cyan-400 font-bold tracking-widest">ROUTE REPLAY</div>
-          <h3 class="font-bold text-sm sm:text-base text-slate-100"><i class="fa-solid fa-play mr-2 text-cyan-400"></i>走行シミュレーション</h3>
-        </div>
-        <button onclick="closeReplayModal()" class="text-slate-400 hover:text-white p-2 rounded-lg hover:bg-slate-800"><i class="fa-solid fa-xmark text-lg"></i></button>
-      </div>
-
-      <div class="overflow-y-auto flex-1">
-        <div class="relative">
-          <div id="replayMap" class="w-full bg-slate-900"></div>
-          <div id="replayPhaseBadge" class="absolute bottom-2 left-2 z-[500] px-2 py-1 rounded-lg bg-slate-950/90 border border-slate-700 text-[10px] font-bold text-amber-300 shadow">迎車区間</div>
-        </div>
-
-        <div class="p-3 sm:p-4 space-y-3">
-          <div class="grid grid-cols-2 gap-2">
-            <div class="bg-slate-900 border border-cyan-800/60 rounded-xl p-3 text-center">
-              <div class="text-[9px] text-cyan-400 font-bold">🚕 メーター運賃</div>
-              <div id="replayMeterFare" class="replay-score font-digital text-2xl sm:text-3xl text-cyan-300 font-bold">¥0</div>
-              <div id="replayMeterSub" class="text-[9px] text-slate-500">進行中</div>
-            </div>
-            <div class="bg-slate-900 border border-amber-800/60 rounded-xl p-3 text-center">
-              <div class="text-[9px] text-amber-400 font-bold">🚖 事前確定運賃</div>
-              <div id="replayFixedFare" class="replay-score font-digital text-2xl sm:text-3xl text-amber-300 font-bold">¥0</div>
-              <div id="replayFixedSub" class="text-[9px] text-slate-500">進行中</div>
-            </div>
-          </div>
-
-          <div class="bg-slate-900/80 border border-slate-800 rounded-xl p-3">
-            <div class="flex items-center justify-between text-[10px] font-mono text-slate-400 mb-2">
-              <span id="replayDistanceText">距離 0.00km</span>
-              <span id="replayTimeText">時間 00:00</span>
-              <span id="replaySpeedText">再生 ×5</span>
-            </div>
-            <div class="replay-progress"><div id="replayProgressBar"></div></div>
-          </div>
-
-          <div class="grid grid-cols-4 gap-1.5">
-            <button onclick="setReplaySpeed(5)" class="replay-speed-btn rounded-lg bg-slate-800 border border-slate-700 py-2 text-[10px] font-bold text-slate-300">×5</button>
-            <button onclick="setReplaySpeed(10)" class="replay-speed-btn rounded-lg bg-slate-800 border border-slate-700 py-2 text-[10px] font-bold text-slate-300">×10</button>
-            <button onclick="setReplaySpeed(20)" class="replay-speed-btn rounded-lg bg-slate-800 border border-slate-700 py-2 text-[10px] font-bold text-slate-300">×20</button>
-            <button onclick="setReplaySpeed(30)" class="replay-speed-btn rounded-lg bg-slate-800 border border-slate-700 py-2 text-[10px] font-bold text-slate-300">×30</button>
-          </div>
-
-          <div id="replayResult" class="hidden rounded-xl border border-emerald-800/60 bg-emerald-950/20 p-4 text-center">
-            <div class="text-[10px] text-slate-400">🏁 到着・最終結果</div>
-            <div id="replayWinnerText" class="mt-1 text-lg font-bold text-slate-100"></div>
-            <div id="replayDiffText" class="mt-1 text-xs font-mono text-slate-400"></div>
-            <div id="replayRecordText" class="mt-2 text-[9px] text-slate-500"></div>
-          </div>
-
-          <div class="grid grid-cols-2 gap-2 pb-1">
-            <button id="replayPlayBtn" onclick="toggleReplayPlayback()" class="h-10 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-slate-950 font-bold text-xs shadow"><i class="fa-solid fa-play mr-1"></i>再生</button>
-            <button onclick="closeReplayModal()" class="h-10 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs">閉じる</button>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
   <!-- Custom Alert Modal -->
   <div id="customModal" class="fixed inset-0 bg-black/75 backdrop-blur-sm z-[80] hidden flex items-center justify-center p-4">
     <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-xs w-full p-5 text-center shadow-2xl space-y-4">
@@ -939,8 +873,14 @@
     // 低速時は10km/h換算で時間を距離に置き換え、80秒ごとに100円ではなく
     // 初乗り分を消化してから213m相当ごとに100円加算する。
     let meterProgressDistance = 0;
+    // 深夜切替をまたぐ場合も、切替前に確定した運賃を再計算し直さないための内部状態。
+    // 初乗り残距離と、現在の加算区間の進行距離を保持して、距離を逐次消化する。
+    let meterBaseRemainingDistance = 1.027;
+    let meterFareUnitProgress = 0;
+    let meterFareUnits = 0;
     let lastRoutedPosition = null;
     let lastRoutedTimestamp = 0;
+    let lastFareTimerTimestamp = 0;
     let latestGPSPosition = null;
     let routePoints = [];
     // 運行フェーズ別の記録
@@ -966,6 +906,24 @@
     // 高速道路走行は想定しつつ、GPS飛び込みによる運賃ジャンプを防ぐ。
     const MAX_METER_SEGMENT_SPEED_KMH = 130;
     const MAX_METER_SEGMENT_KM = 2.0;
+    // GPSロスト対策：最後に確認できた速度で暫定積算し、復帰時に道路距離と照合する。
+    const GPS_LOSS_DETECT_MS = 12000;
+    const GPS_LOSS_DISTANCE_DIFF_MIN_KM = 0.30;
+    const GPS_LOSS_DISTANCE_DIFF_RATIO = 0.20;
+    // 2分以上のGPSロストは、距離差が小さくても推定誤差の可能性を履歴に残す。
+    const GPS_LOSS_LONG_GAP_CHECK_MS = 120000;
+    let gpsLossActive = false;
+    let gpsLossEstimateFrozen = false;
+    let gpsLossRecoveryTimestamp = 0;
+    let gpsLossDurationMaxMs = 0;
+    let gpsLossStartAt = 0;
+    let gpsLossLastEstimateAt = 0;
+    let gpsLossSpeedKmh = 0;
+    let gpsLossEstimatedDistance = 0;
+    let gpsLossEvents = 0;
+    let gpsRouteQuality = 'OK'; // OK / CHECK
+    let gpsRouteDiffMaxKm = 0;
+    let gpsRouteCheckCount = 0;
 
     let startLocation = { lat: 35.8617, lng: 139.6455, address: '埼玉県さいたま市 (未測位)' };
     let endLocation = { lat: 35.8033, lng: 139.7133, address: '埼玉県川口市 (未測位)' };
@@ -1045,10 +1003,7 @@
     }
 
     function isNightActive() {
-      if (nightOverrideMode === 'ON') return true;
-      if (nightOverrideMode === 'OFF') return false;
-      const hour = new Date().getHours();
-      return (hour >= 22 || hour < 5);
+      return isNightActiveAt(Date.now());
     }
 
     function updateNightSurchargeVisual(active) {
@@ -1114,6 +1069,14 @@
       }
 
       gpsSessionId++;
+      gpsLossActive = false;
+      gpsLossEstimateFrozen = false;
+      gpsLossRecoveryTimestamp = 0;
+      gpsLossStartAt = 0;
+      gpsLossLastEstimateAt = 0;
+      gpsLossSpeedKmh = 0;
+      gpsLossEstimatedDistance = 0;
+      lastFareTimerTimestamp = 0;
       waitingForFreshRideGPS = true;
       isRoutingFetching = false;
 
@@ -1159,12 +1122,17 @@
         endLocation.lng = lastPosition.lng;
       }
 
-      // ★最重要：GPS取得を待たず、ここで即モーダルを開く
+      // ★重要：金額入力モーダルを開く前に計測を完全停止する。
+      // タイマー・GPS watch・未完了のOSRM区間を止め、入力中に運賃が増えないようにする。
+      // 降車地点の座標は上で endLocation に退避済み。
+      stopMeterSession();
+
+      // GPS取得を待たず、計測停止後すぐにモーダルを開く
       openSettlementModal();
       isFinalizingSettlement = false;
 
-      // 以降のGPS取得はバックグラウンドで行い、取得できれば降車地点を更新する。
-      // 金額入力・保存操作をGPS取得完了までブロックしない。
+      // 降車地点の追加測位だけは単発でバックグラウンド取得する。
+      // これは運賃・距離・時間の積算には触れない。
       if (navigator.geolocation) {
         const settlementGpsSessionId = gpsSessionId;
         const gpsBadge = document.getElementById('gpsStatusBadge');
@@ -1271,7 +1239,7 @@
           occupiedStartAt = new Date().toISOString();
           accumulatedSeconds = 0;
           totalDistance = 0;
-          meterProgressDistance = 0;
+          resetMeterFareProgress();
           timeFareAdded = 0;
           currentFare = isDispatchApplied ? (DISPATCH_FEE + BASE_FARE) : BASE_FARE;
           document.getElementById('dispatchFeeTag').innerText = "迎車料金込 ¥1,000";
@@ -1489,7 +1457,12 @@
         pickupSeconds: getElapsedSeconds(engageStartAt, occupiedStartAt),
         occupiedSeconds: getElapsedSeconds(occupiedStartAt, dropoffAt || new Date().toISOString()),
         occupiedRate: calculateOccupiedRate(pickupDistance, totalDistance),
-        routePoints: routePoints.map(p => ({ lat: p.lat, lng: p.lng, phase: p.phase, ...(Number.isFinite(Number(p.ts)) ? { ts: Number(p.ts) } : {}) }))
+        gpsLossEvents,
+        gpsLossDurationMaxSec: Math.round(gpsLossDurationMaxMs / 1000),
+        gpsRouteQuality,
+        gpsRouteDiffMaxKm: Number(gpsRouteDiffMaxKm.toFixed(3)),
+        gpsRouteCheckCount,
+        routePoints: routePoints.map(p => ({ lat: p.lat, lng: p.lng, phase: p.phase }))
       };
 
       rideLogs.unshift(record);
@@ -1508,7 +1481,9 @@
       accumulatedSeconds = 0;
       currentFare = 0;
       timeFareAdded = 0;
-      meterProgressDistance = 0;
+      resetMeterFareProgress();
+      gpsLossActive = false; gpsLossEstimateFrozen = false; gpsLossRecoveryTimestamp = 0; gpsLossStartAt = 0; gpsLossLastEstimateAt = 0; gpsLossSpeedKmh = 0; gpsLossEstimatedDistance = 0;
+      gpsLossDurationMaxMs = 0; gpsLossEvents = 0; gpsRouteQuality = 'OK'; gpsRouteDiffMaxKm = 0; gpsRouteCheckCount = 0;
       lastPosition = null;
       latestGPSPosition = null;
       lastRoutedPosition = null;
@@ -1542,20 +1517,117 @@
       showSaveCompleteModal(`${modeLabel}比較結果を保存`, message);
     }
 
+    function beginGPSLossIfNeeded(nowMs = Date.now()) {
+      if (appState !== 'OCCUPIED' || !isOccupiedStarted || !lastGPSAcceptedTimestamp) return false;
+      const gapMs = Math.max(0, nowMs - lastGPSAcceptedTimestamp);
+      if (gapMs < GPS_LOSS_DETECT_MS && !gpsLossActive) return false;
+
+      if (!gpsLossActive) {
+        gpsLossActive = true;
+        gpsLossStartAt = lastGPSAcceptedTimestamp;
+        gpsLossLastEstimateAt = nowMs;
+        gpsLossSpeedKmh = Math.max(0, Math.min(MAX_METER_SEGMENT_SPEED_KMH, Number(speedKmh) || 0));
+        gpsLossEstimatedDistance = 0;
+        gpsLossEvents++;
+        gpsRouteCheckCount++;
+        const gpsBadge = document.getElementById('gpsStatusBadge');
+        if (gpsBadge) {
+          gpsBadge.innerText = `GPSロスト・速度補完中 (${Math.round(gpsLossSpeedKmh)}km/h)`;
+          gpsBadge.className = 'text-amber-400 bg-amber-950/50 px-2 py-0.5 rounded-full border border-amber-800/50';
+        }
+        // GPSが途切れた時点から検知までの時間も、最後の速度で暫定補完する。
+        const estimatedSec = gapMs / 1000;
+        if (gpsLossSpeedKmh > LOW_SPEED_THRESHOLD) {
+          const km = gpsLossSpeedKmh * estimatedSec / 3600;
+          gpsLossEstimatedDistance += km;
+          totalDistance += km;
+          advanceMeterFareDistanceByTime(km, lastGPSAcceptedTimestamp, nowMs);
+        } else {
+          const km = (10 / 3600) * estimatedSec;
+          advanceMeterFareDistanceByTime(km, lastGPSAcceptedTimestamp, nowMs);
+        }
+        updateDisplay();
+      }
+      return true;
+    }
+
+    function updateGPSLossEstimate(nowMs = Date.now()) {
+      if (appState !== 'OCCUPIED' || !isOccupiedStarted || !lastGPSAcceptedTimestamp) return;
+      // GPSが復帰した時刻で推定を凍結。OSRM応答待ちの間に距離を余分に積まない。
+      if (gpsLossActive && gpsLossEstimateFrozen) return;
+      if (!gpsLossActive) {
+        beginGPSLossIfNeeded(nowMs);
+        return;
+      }
+      const fromMs = gpsLossLastEstimateAt || nowMs;
+      const elapsedSec = Math.max(0, Math.min(5, (nowMs - fromMs) / 1000));
+      if (elapsedSec <= 0) return;
+      if (gpsLossSpeedKmh > LOW_SPEED_THRESHOLD) {
+        const km = gpsLossSpeedKmh * elapsedSec / 3600;
+        gpsLossEstimatedDistance += km;
+        totalDistance += km;
+        advanceMeterFareDistanceByTime(km, fromMs, nowMs);
+      } else {
+        // 停車・低速時は通常タイマーと同じ10km/h相当の時間加算のみ。
+        advanceMeterFareDistanceByTime((10 / 3600) * elapsedSec, fromMs, nowMs);
+      }
+      gpsLossLastEstimateAt = nowMs;
+      updateDisplay();
+    }
+
+    function assessGPSRecoveryDistance(routeDistKm) {
+      if (!gpsLossActive) return;
+      const routeDist = Math.max(0, Number(routeDistKm) || 0);
+      const estimated = Math.max(0, Number(gpsLossEstimatedDistance) || 0);
+      const diff = Math.abs(routeDist - estimated);
+      const lossDurationMs = Math.max(0, (gpsLossRecoveryTimestamp || Date.now()) - (gpsLossStartAt || Date.now()));
+      gpsLossDurationMaxMs = Math.max(gpsLossDurationMaxMs, lossDurationMs);
+      gpsRouteDiffMaxKm = Math.max(gpsRouteDiffMaxKm, diff);
+      const threshold = Math.max(GPS_LOSS_DISTANCE_DIFF_MIN_KM, estimated * GPS_LOSS_DISTANCE_DIFF_RATIO);
+      // 距離差が大きい、または2分以上の長時間ロストは「要確認」とする。
+      // 道路ルート推定は実走行そのものではないため、長時間時は差が小さくても断定しない。
+      if (diff > threshold || lossDurationMs >= GPS_LOSS_LONG_GAP_CHECK_MS) gpsRouteQuality = 'CHECK';
+      const gpsBadge = document.getElementById('gpsStatusBadge');
+      if (gpsBadge) {
+        if (diff > threshold) {
+          gpsBadge.innerText = `GPS復帰・距離差要確認 (${diff.toFixed(2)}km)`;
+          gpsBadge.className = 'text-amber-400 bg-amber-950/50 px-2 py-0.5 rounded-full border border-amber-800/50';
+        } else {
+          gpsBadge.innerText = `GPS復帰・距離差OK (${diff.toFixed(2)}km)`;
+          gpsBadge.className = 'text-emerald-400 bg-emerald-950/50 px-2 py-0.5 rounded-full border border-emerald-800/50';
+        }
+      }
+      // 暫定距離はすでに運賃へ反映済みなので、復帰時のOSRM距離を再加算しない。
+      // 履歴に照合結果を保存し、差が大きい運行は注意表示する。
+      gpsLossActive = false;
+      gpsLossStartAt = 0;
+      gpsLossLastEstimateAt = 0;
+      gpsLossSpeedKmh = 0;
+      gpsLossEstimatedDistance = 0;
+    }
+
     function startOccupiedMeterSession() {
       // 実車開始時専用。迎車中に積算した距離・時間はメーターに持ち込まない。
       startTime = new Date();
+      lastFareTimerTimestamp = Date.now();
 
       startGPSWatch();
 
       if (timerInterval) clearInterval(timerInterval);
       timerInterval = setInterval(() => {
+        if (document.getElementById('settlementModal')?.classList.contains('hidden') === false) return;
+        updateGPSLossEstimate(Date.now());
         accumulatedSeconds++;
 
-        if (isOccupiedStarted && speedKmh <= LOW_SPEED_THRESHOLD) {
-          const lowSpeedEquivalentKmPerSecond = 10 / 3600;
-          meterProgressDistance += lowSpeedEquivalentKmPerSecond;
-          recalculateMeter();
+        if (isOccupiedStarted && speedKmh <= LOW_SPEED_THRESHOLD && !gpsLossActive) {
+          const nowMs = Date.now();
+          const fromMs = lastFareTimerTimestamp || (nowMs - 1000);
+          const elapsedSec = Math.max(0, Math.min(10, (nowMs - fromMs) / 1000));
+          const lowSpeedEquivalentKm = (10 / 3600) * elapsedSec;
+          advanceMeterFareDistanceByTime(lowSpeedEquivalentKm, fromMs, nowMs);
+          lastFareTimerTimestamp = nowMs;
+        } else if (isOccupiedStarted) {
+          lastFareTimerTimestamp = Date.now();
         }
 
         updateDisplay();
@@ -1565,8 +1637,9 @@
     function startMeterSession() {
       if (!startTime) {
         startTime = new Date();
+        lastFareTimerTimestamp = Date.now();
         timeFareAdded = 0;
-        meterProgressDistance = 0;
+        resetMeterFareProgress();
         routePoints = [];
         if (lastPosition) addRoutePoint(lastPosition.lat, lastPosition.lng, true);
       }
@@ -1575,15 +1648,22 @@
 
       if (timerInterval) clearInterval(timerInterval);
       timerInterval = setInterval(() => {
+        if (document.getElementById('settlementModal')?.classList.contains('hidden') === false) return;
+        updateGPSLossEstimate(Date.now());
         accumulatedSeconds++;
 
         // 時速10km以下では「時間」をメーター進行距離へ換算する。
         // 10km/h × 80秒 = 約0.222kmなので、80秒経過しただけでは
         // 初乗り1.027kmを消化せず、いきなり100円は加算しない。
-        if (isOccupiedStarted && speedKmh <= LOW_SPEED_THRESHOLD) {
-          const lowSpeedEquivalentKmPerSecond = 10 / 3600;
-          meterProgressDistance += lowSpeedEquivalentKmPerSecond;
-          recalculateMeter();
+        if (isOccupiedStarted && speedKmh <= LOW_SPEED_THRESHOLD && !gpsLossActive) {
+          const nowMs = Date.now();
+          const fromMs = lastFareTimerTimestamp || (nowMs - 1000);
+          const elapsedSec = Math.max(0, Math.min(10, (nowMs - fromMs) / 1000));
+          const lowSpeedEquivalentKm = (10 / 3600) * elapsedSec;
+          advanceMeterFareDistanceByTime(lowSpeedEquivalentKm, fromMs, nowMs);
+          lastFareTimerTimestamp = nowMs;
+        } else if (isOccupiedStarted) {
+          lastFareTimerTimestamp = Date.now();
         }
 
         updateDisplay();
@@ -1597,6 +1677,7 @@
       }
       // watchPositionの遅延コールバックと、進行中OSRMを次の運行へ持ち込まない。
       gpsSessionId++;
+      lastFareTimerTimestamp = 0;
       waitingForFreshRideGPS = false;
       isRoutingFetching = false;
       lastPosition = null;
@@ -1640,7 +1721,7 @@
       const last = routePoints[routePoints.length - 1];
       // 約10m以上動いた点だけ保存。GPSの微細な揺れで履歴が膨らむのを防ぐ
       if (!last || force || calculateHaversineDistance(last.lat, last.lng, lat, lng) >= 0.01) {
-        routePoints.push({ lat, lng, phase: appState === 'OCCUPIED' ? 'red' : 'blue', ts: Date.now() });
+        routePoints.push({ lat, lng, phase: appState === 'OCCUPIED' ? 'red' : 'blue' });
       }
     }
 
@@ -1673,7 +1754,7 @@
           gpsBadge.innerText = "GPSエラー";
           gpsBadge.className = "text-red-400 bg-red-950/50 px-2 py-0.5 rounded-full border border-red-800/50";
           document.getElementById('addressDisplay').innerText = "GPS信号を取得できません。位置情報の許可とGPS状態を確認してください。";
-          // 一時的なGPSエラーで実走行をシミュレーションに切り替えない
+          // 一時的なGPSエラーでも計測は止めない。一定時間測位が途絶えたら速度補完へ移行する。
         },
         { enableHighAccuracy: true, maximumAge: 0, timeout: 10000 }
       );
@@ -1712,6 +1793,30 @@
         }
       }
 
+      // 復帰位置を採用する前に、前回測位からの空白時間を判定する。
+      const gapSinceLastGPS = lastGPSAcceptedTimestamp > 0 ? nowTs - lastGPSAcceptedTimestamp : 0;
+      if (appState === 'OCCUPIED' && isOccupiedStarted && gapSinceLastGPS >= GPS_LOSS_DETECT_MS && !gpsLossActive) {
+        beginGPSLossIfNeeded(nowTs);
+      }
+      const wasGPSLossActive = gpsLossActive;
+      if (wasGPSLossActive) {
+        // 復帰時刻までの最後の短い区間を加算してから推定を凍結する。
+        const fromMs = gpsLossLastEstimateAt || nowTs;
+        const elapsedSec = Math.max(0, Math.min(5, (nowTs - fromMs) / 1000));
+        if (elapsedSec > 0) {
+          if (gpsLossSpeedKmh > LOW_SPEED_THRESHOLD) {
+            const km = gpsLossSpeedKmh * elapsedSec / 3600;
+            gpsLossEstimatedDistance += km;
+            totalDistance += km;
+            advanceMeterFareDistanceByTime(km, fromMs, nowTs);
+          } else {
+            advanceMeterFareDistanceByTime((10 / 3600) * elapsedSec, fromMs, nowTs);
+          }
+        }
+        gpsLossLastEstimateAt = nowTs;
+        gpsLossEstimateFrozen = true;
+        gpsLossRecoveryTimestamp = nowTs;
+      }
       speedKmh = gpsSpeedKmh;
       lastPosition = currentPos;
       latestGPSPosition = currentPos;
@@ -1795,7 +1900,7 @@
           // ここで除外しても「処理済み地点」は最新GPSへ進めるので、次回に巨大な距離が持ち越されない。
           const meterGpsAnomaly =
             phaseAtRequest === 'OCCUPIED' &&
-            (apparentSpeedKmh > MAX_METER_SEGMENT_SPEED_KMH || straightLineKm > MAX_METER_SEGMENT_KM);
+            !gpsLossActive && (apparentSpeedKmh > MAX_METER_SEGMENT_SPEED_KMH || straightLineKm > MAX_METER_SEGMENT_KM);
 
           if (meterGpsAnomaly) {
             const gpsBadge = document.getElementById('gpsStatusBadge');
@@ -1804,9 +1909,19 @@
           } else {
             const routeDist = await fetchRouteDistance(from.lat, from.lng, to.lat, to.lng);
 
-            // OSRM道路距離にもメーター専用の安全弁を適用。
-            // 通常の短いGPS区間だけをメーターへ加算する。
-            const routeSpeedKmh = (routeDist / elapsedSec) * 3600;
+            // OSRM待機中に精算が開始された場合、停止前に開始した距離結果を破棄する。
+            // これにより金額入力モーダル中に遅れて運賃・距離が増えるのを防ぐ。
+            if (sessionAtRequest !== gpsSessionId ||
+                document.getElementById('settlementModal')?.classList.contains('hidden') === false) break;
+
+            // GPSロスト中に速度で暫定積算していた区間は、復帰時のOSRM道路距離と照合。
+            // 暫定積算済みなので、道路距離を二重加算しない。
+            if (phaseAtRequest === 'OCCUPIED' && gpsLossActive) {
+              assessGPSRecoveryDistance(routeDist);
+            } else {
+              // OSRM道路距離にもメーター専用の安全弁を適用。
+              // 通常の短いGPS区間だけをメーターへ加算する。
+              const routeSpeedKmh = (routeDist / elapsedSec) * 3600;
             const meterRouteAnomaly =
               phaseAtRequest === 'OCCUPIED' &&
               (routeDist >= 3.0 || routeDist > MAX_METER_SEGMENT_KM || routeSpeedKmh > MAX_METER_SEGMENT_SPEED_KMH);
@@ -1821,9 +1936,10 @@
               } else if (phaseAtRequest === 'OCCUPIED') {
                 totalDistance += routeDist;
                 if (speedKmh > LOW_SPEED_THRESHOLD) {
-                  meterProgressDistance += routeDist;
+                  advanceMeterFareDistanceByTime(routeDist, lastRoutedTimestamp || toTimestamp, toTimestamp);
                 }
                 recalculateMeter();
+              }
               }
             }
           }
@@ -1842,6 +1958,89 @@
     }
 
 
+    function isNightActiveAt(timestamp) {
+      if (nightOverrideMode === 'ON') return true;
+      if (nightOverrideMode === 'OFF') return false;
+      const d = timestamp instanceof Date ? timestamp : new Date(timestamp || Date.now());
+      const hour = d.getHours();
+      return hour >= 22 || hour < 5;
+    }
+
+    function resetMeterFareProgress() {
+      meterProgressDistance = 0;
+      meterBaseRemainingDistance = BASE_DISTANCE;
+      meterFareUnitProgress = 0;
+      meterFareUnits = 0;
+    }
+
+    // 距離を「その時点の運賃条件」で順番に消化する。
+    // 重要：深夜になっても、21:59までに確定した通常運賃を巻き戻さない。
+    function advanceMeterFareDistance(distanceKm, nightMode) {
+      let remaining = Math.max(0, Number(distanceKm) || 0);
+      if (remaining <= 0 || !isOccupiedStarted) return;
+
+      meterProgressDistance += remaining;
+
+      // 初乗り残距離は、深夜切替後も「残っている距離」をそのまま使う。
+      if (meterBaseRemainingDistance > 0) {
+        const consumedBase = Math.min(remaining, meterBaseRemainingDistance);
+        meterBaseRemainingDistance -= consumedBase;
+        remaining -= consumedBase;
+        if (remaining <= 0) {
+          recalculateMeter();
+          return;
+        }
+      }
+
+      const unit = nightMode ? (DISTANCE_UNIT / 1.2) : DISTANCE_UNIT;
+      meterFareUnitProgress += remaining;
+
+      while (meterFareUnitProgress >= unit) {
+        meterFareUnitProgress -= unit;
+        meterFareUnits++;
+      }
+
+      recalculateMeter();
+    }
+
+    // GPS区間が22:00/05:00をまたいだ場合は、区間距離を時刻に比例分割する。
+    function advanceMeterFareDistanceByTime(distanceKm, fromTimestamp, toTimestamp) {
+      const from = Number(fromTimestamp) || Date.now();
+      const to = Number(toTimestamp) || from;
+      const totalMs = to - from;
+      const totalDistance = Math.max(0, Number(distanceKm) || 0);
+      if (totalDistance <= 0) return;
+      if (totalMs <= 0) {
+        advanceMeterFareDistance(totalDistance, isNightActiveAt(to));
+        return;
+      }
+
+      // 22:00/05:00をまたぐ場合、区間距離を経過時間に比例して分割する。
+      // これにより 21:59:30→22:00:30 のGPS区間なら、前半は通常・後半だけ深夜になる。
+      const transitions = [];
+      const start = new Date(from);
+      const end = new Date(to);
+      for (let dayOffset = -1; dayOffset <= 1; dayOffset++) {
+        for (const hour of [5, 22]) {
+          const t = new Date(start);
+          t.setDate(t.getDate() + dayOffset);
+          t.setHours(hour, 0, 0, 0);
+          const ts = t.getTime();
+          if (ts > from && ts < to) transitions.push(ts);
+        }
+      }
+      transitions.sort((a, b) => a - b);
+
+      const boundaries = [from, ...transitions, to];
+      for (let i = 0; i < boundaries.length - 1; i++) {
+        const segmentStart = boundaries[i];
+        const segmentEnd = boundaries[i + 1];
+        const segmentRatio = (segmentEnd - segmentStart) / totalMs;
+        const segmentDistance = totalDistance * segmentRatio;
+        advanceMeterFareDistance(segmentDistance, isNightActiveAt(segmentStart + 1));
+      }
+    }
+
     function recalculateMeter() {
       if (!isOccupiedStarted) {
         currentFare = isDispatchApplied ? DISPATCH_FEE : 0;
@@ -1851,20 +2050,8 @@
       let baseAmount = BASE_FARE;
       if (isDispatchApplied) baseAmount += DISPATCH_FEE;
 
-      // 時間距離併用運賃は「距離」と「低速時間」を別々に100円加算するのではなく、
-      // メーター進行距離として合算する。
-      // 初乗り1.027kmまでは500円に含まれる。
-      const effectiveDistanceUnit = isNightActive() ? (DISTANCE_UNIT / 1.2) : DISTANCE_UNIT;
-      const effectiveBaseDistance = BASE_DISTANCE;
-
-      if (meterProgressDistance <= effectiveBaseDistance) {
-        currentFare = baseAmount;
-      } else {
-        const extraDist = meterProgressDistance - effectiveBaseDistance;
-        const addUnits = Math.ceil(extraDist / effectiveDistanceUnit);
-        currentFare = baseAmount + (addUnits * DISTANCE_FARE_UNIT);
-      }
-
+      // 運賃は逐次確定方式。22時になっても、それ以前の通常運賃を深夜条件で再計算しない。
+      currentFare = baseAmount + (meterFareUnits * DISTANCE_FARE_UNIT);
       currentFare = Math.round(currentFare / 10) * 10;
     }
 
@@ -1884,16 +2071,13 @@
       let remainingKm;
       let label;
 
-      if (meterProgressDistance < BASE_DISTANCE) {
-        remainingKm = BASE_DISTANCE - meterProgressDistance;
+      if (meterBaseRemainingDistance > 0) {
+        remainingKm = meterBaseRemainingDistance;
         label = '初乗り残り';
       } else {
-        const effectiveDistanceUnit = isNightActive()
-          ? (DISTANCE_UNIT / 1.2)
-          : DISTANCE_UNIT;
-        const extraDist = meterProgressDistance - BASE_DISTANCE;
-        const progressInUnit = extraDist % effectiveDistanceUnit;
-        remainingKm = progressInUnit === 0 ? effectiveDistanceUnit : effectiveDistanceUnit - progressInUnit;
+        const effectiveDistanceUnit = isNightActive() ? (DISTANCE_UNIT / 1.2) : DISTANCE_UNIT;
+        remainingKm = Math.max(0, effectiveDistanceUnit - meterFareUnitProgress);
+        if (remainingKm <= 0) remainingKm = effectiveDistanceUnit;
         label = '次回加算まで';
       }
 
@@ -2228,6 +2412,8 @@
           const tags = [];
           if (log.isNight) tags.push('<span class="bg-indigo-950 text-indigo-300 px-1.5 py-0.5 rounded text-[9px] border border-indigo-800">深夜割増(短縮方式)</span>');
           if (log.isDispatch) tags.push('<span class="bg-amber-950 text-amber-300 px-1.5 py-0.5 rounded text-[9px] border border-amber-800">迎車込</span>');
+          if (Number(log.gpsLossEvents) > 0 && log.gpsRouteQuality === 'CHECK') tags.push(`<span class="bg-red-950 text-red-300 px-1.5 py-0.5 rounded text-[9px] border border-red-800">GPSロスト・距離誤差要確認 (最大差 ${Number(log.gpsRouteDiffMaxKm || 0).toFixed(2)}km)</span>`);
+          else if (Number(log.gpsLossEvents) > 0) tags.push(`<span class="bg-amber-950 text-amber-300 px-1.5 py-0.5 rounded text-[9px] border border-amber-800">GPSロスト補完・復帰距離確認済み</span>`);
 
           const item = document.createElement('div');
           item.className = "bg-slate-900 border border-slate-800 rounded-xl overflow-hidden shadow-sm";
@@ -2247,6 +2433,7 @@
               </div>
             </div>
 
+            ${Number(log.gpsLossEvents) > 0 ? `<div class="px-3 py-2 text-[10px] ${log.gpsRouteQuality === 'CHECK' ? 'bg-red-950/50 text-red-300 border-b border-red-900' : 'bg-amber-950/40 text-amber-200 border-b border-amber-900'}">GPSロスト補完：${Number(log.gpsLossEvents)}回 / 最長ロスト ${formatDuration(Number(log.gpsLossDurationMaxSec || 0))} / 復帰時の道路距離との最大差 ${Number(log.gpsRouteDiffMaxKm || 0).toFixed(2)}km。${log.gpsRouteQuality === 'CHECK' ? '距離・運賃に誤差がある可能性があります。' : '大きな距離差は検出されませんでした。'}</div>` : ''}
             <div class="grid grid-cols-2 sm:grid-cols-4 divide-x divide-slate-800 border-b border-slate-800">
               <div class="p-2.5 text-center"><div class="text-[9px] text-amber-500">迎車距離</div><div class="font-mono text-amber-200 font-bold text-sm">${m.pickupKm.toFixed(2)}<span class="text-[9px] ml-0.5">km</span></div></div>
               <div class="p-2.5 text-center"><div class="text-[9px] text-red-400">実車距離</div><div class="font-mono text-red-200 font-bold text-sm">${m.occupiedKm.toFixed(2)}<span class="text-[9px] ml-0.5">km</span></div></div>
@@ -2282,10 +2469,7 @@
 
               <div class="flex items-center gap-2 pt-1">
                 <button onclick="openRouteMapFromHistory(${Number(log.id)})" class="flex-1 bg-cyan-950/40 hover:bg-cyan-900/50 border border-cyan-800/70 text-cyan-300 rounded-lg py-2.5 text-[11px] font-bold transition">
-                  <i class="fa-solid fa-map-location-dot mr-1"></i>ルート・詳細
-                </button>
-                <button onclick="openReplayFromHistory(${Number(log.id)})" class="flex-1 bg-emerald-950/40 hover:bg-emerald-900/50 border border-emerald-800/70 text-emerald-300 rounded-lg py-2.5 text-[11px] font-bold transition">
-                  <i class="fa-solid fa-play mr-1"></i>再生
+                  <i class="fa-solid fa-map-location-dot mr-1"></i>ルート・詳細を見る
                 </button>
                 <div class="text-[9px] text-slate-600">メーター ${log.distance}km / ${timeStr}</div>
               </div>
@@ -2340,281 +2524,6 @@
       rideLogs = [];
       localStorage.removeItem('taxi_ride_logs_pro_saitama');
       renderHistoryList();
-    }
-
-
-    // ==============================
-    // 走行シミュレーション再生
-    // ==============================
-    let replayMap = null;
-    let replayRouteLine = null;
-    let replayMarker = null;
-    let replayAnimationId = null;
-    let replayData = null;
-    let replaySpeed = 5;
-    let replayPlaying = false;
-    let replayLastFrame = 0;
-
-    function openReplayFromHistory(logId) {
-      const log = rideLogs.find(item => Number(item.id) === Number(logId));
-      if (!log) {
-        showModal('再生エラー', 'この履歴データが見つかりません。');
-        return;
-      }
-      const raw = Array.isArray(log.routePoints) ? log.routePoints : [];
-      const points = raw.filter(p => Number.isFinite(Number(p?.lat)) && Number.isFinite(Number(p?.lng)))
-        .map(p => ({ lat:Number(p.lat), lng:Number(p.lng), phase:p.phase === 'red' ? 'red' : 'blue', ts:Number(p.ts) }));
-      if (points.length < 2) {
-        showModal('再生できません', 'この履歴には再生に必要なGPS軌跡がありません。新しい走行から再生できます。');
-        return;
-      }
-
-      replayData = buildReplayData(log, points);
-      replaySpeed = 5;
-      replayPlaying = false;
-      replayLastFrame = 0;
-      cancelAnimationFrame(replayAnimationId);
-
-      document.getElementById('replayModal').classList.remove('hidden');
-      document.getElementById('replayResult').classList.add('hidden');
-      document.getElementById('replayPlayBtn').innerHTML = '<i class="fa-solid fa-play mr-1"></i>再生';
-      updateReplayUI(0);
-
-      requestAnimationFrame(() => {
-        if (!replayMap) {
-          replayMap = L.map('replayMap', { zoomControl:true });
-          L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            maxZoom:19, attribution:'&copy; OpenStreetMap contributors'
-          }).addTo(replayMap);
-        }
-        replayMap.invalidateSize({pan:false});
-        if (replayRouteLine) replayMap.removeLayer(replayRouteLine);
-        if (window.replayTrailLayers) {
-          window.replayTrailLayers.forEach(layer => { try { replayMap.removeLayer(layer); } catch(e) {} });
-        }
-        window.replayTrailLayers = [];
-        replayRouteLine = null;
-        if (replayMarker) replayMap.removeLayer(replayMarker);
-        replayMarker = L.marker([points[0].lat,points[0].lng], {
-          icon:L.divIcon({className:'replay-car',html:'🚕',iconSize:[28,28],iconAnchor:[14,14]})
-        }).addTo(replayMap);
-        replayMap.fitBounds(L.latLngBounds(points.map(p => [p.lat,p.lng])), {padding:[30,30],maxZoom:16});
-      });
-    }
-
-    function closeReplayModal() {
-      replayPlaying = false;
-      cancelAnimationFrame(replayAnimationId);
-      replayAnimationId = null;
-      replayData = null;
-      const modal = document.getElementById('replayModal');
-      if (modal) modal.classList.add('hidden');
-    }
-
-    function setReplaySpeed(speed) {
-      replaySpeed = Number(speed) || 1;
-      document.getElementById('replaySpeedText').innerText = `再生 ×${replaySpeed}`;
-    }
-
-    function toggleReplayPlayback() {
-      if (!replayData) return;
-      if (replayData.elapsed >= replayData.durationMs - 1) {
-        replayData.elapsed = 0;
-        updateReplayUI(0);
-      }
-      replayPlaying = !replayPlaying;
-      const btn = document.getElementById('replayPlayBtn');
-      if (replayPlaying) {
-        btn.innerHTML = '<i class="fa-solid fa-pause mr-1"></i>一時停止';
-        replayLastFrame = performance.now();
-        replayAnimationId = requestAnimationFrame(stepReplayPlayback);
-      } else {
-        btn.innerHTML = '<i class="fa-solid fa-play mr-1"></i>再生';
-        cancelAnimationFrame(replayAnimationId);
-      }
-    }
-
-    function stepReplayPlayback(now) {
-      if (!replayPlaying || !replayData) return;
-      const dt = Math.min(100, Math.max(0, now - replayLastFrame));
-      replayLastFrame = now;
-      replayData.elapsed += dt * replaySpeed;
-      if (replayData.elapsed >= replayData.durationMs) {
-        replayData.elapsed = replayData.durationMs;
-        replayPlaying = false;
-      }
-      updateReplayUI(replayData.elapsed);
-      if (replayPlaying) {
-        replayAnimationId = requestAnimationFrame(stepReplayPlayback);
-      } else {
-        document.getElementById('replayPlayBtn').innerHTML = '<i class="fa-solid fa-rotate-right mr-1"></i>もう一度再生';
-      }
-    }
-
-    function buildReplayData(log, points) {
-      const metrics = getLogMetrics(log);
-      const segments = [];
-      let totalDist = 0;
-      let pickupDist = 0;
-      let occupiedDist = 0;
-
-      for (let i=1;i<points.length;i++) {
-        const a=points[i-1], b=points[i];
-        const dist=calculateHaversineDistance(a.lat,a.lng,b.lat,b.lng);
-        if (!Number.isFinite(dist)) continue;
-        totalDist += dist;
-        if (b.phase === 'red') occupiedDist += dist; else pickupDist += dist;
-        segments.push({a,b,dist,phase:b.phase,dt:0,cumDist:totalDist,cumOccDist:occupiedDist});
-      }
-
-      const hasTimestamps = segments.length > 0 && segments.every(x => Number.isFinite(x.a.ts) && Number.isFinite(x.b.ts) && x.b.ts >= x.a.ts);
-      let pickupTime = Math.max(0, Number(metrics.pickupSec)||0);
-      let occupiedTime = Math.max(0, Number(metrics.occupiedSec)||0);
-      if (occupiedTime <= 0) occupiedTime = Math.max(1, Number(log.timeSec)||1);
-      if (pickupTime <= 0 && pickupDist > 0 && occupiedDist > 0) pickupTime = Math.max(1, occupiedTime * (pickupDist / occupiedDist));
-      const totalTime = Math.max(1, pickupTime + occupiedTime);
-
-      if (hasTimestamps) {
-        segments.forEach(seg => { seg.dt=Math.max(50,seg.b.ts-seg.a.ts); });
-        const rawTotal=segments.reduce((n,x)=>n+x.dt,0);
-        const scale=rawTotal>0 ? totalTime*1000/rawTotal : 1;
-        segments.forEach(seg=>seg.dt*=scale);
-      } else {
-        segments.forEach(seg => {
-          const phaseTotal = seg.phase==='red' ? occupiedDist : pickupDist;
-          const phaseSec = seg.phase==='red' ? occupiedTime : pickupTime;
-          seg.dt = phaseTotal>0 ? phaseSec*1000*(seg.dist/phaseTotal) : totalTime*1000/Math.max(1,segments.length);
-        });
-      }
-
-      // 実メーターと同じ「距離＋低速時間」の進行量を再生用に作る。
-      // 低速（10km/h以下）は、実機と同じく10km/h相当の距離へ時間を換算。
-      // それ以外は実際に記録されたGPS区間距離をメーター進行へ加算する。
-      let elapsed=0, occ=0, meterProgress=0, routeDist=0;
-      segments.forEach(seg => {
-        const speed = seg.dt > 0 ? seg.dist / (seg.dt / 3600000) : 0;
-        const meterAdd = seg.phase === 'red'
-          ? (speed <= LOW_SPEED_THRESHOLD
-              ? (10 / 3600) * (seg.dt / 1000)
-              : seg.dist)
-          : 0;
-
-        if (seg.phase === 'red') {
-          occ += seg.dist;
-          meterProgress += meterAdd;
-        }
-        routeDist += seg.dist;
-        elapsed += seg.dt;
-
-        // 各区間の開始時点も保存しておくことで、再生途中でも
-        // 「時間加算で増えた進行距離」を正しく線形補間できる。
-        seg.startElapsed = elapsed - seg.dt;
-        seg.startMeterProgress = meterProgress - meterAdd;
-        seg.endElapsed = elapsed;
-        seg.occDistance = occ;
-        seg.meterProgress = meterProgress;
-        seg.meterAdd = meterAdd;
-        seg.routeDistance = routeDist;
-      });
-
-      const finalTargetFare = Number(log.fare)||0;
-      const fixedTargetFare = Number(log.fixedFare || log.distanceFixedFare || 0) || calculateReplayFixedFare(log, occupiedDist);
-      return {log,points,segments,durationMs:Math.max(1000,elapsed),elapsed:0,finalTargetFare,fixedTargetFare,occupiedDist};
-    }
-
-    function calculateReplayMeterFare(log, meterProgress) {
-      const dispatch = !!log.isDispatch;
-      const night = !!log.isNight;
-      let fare = BASE_FARE + (dispatch ? DISPATCH_FEE : 0);
-      if (meterProgress > BASE_DISTANCE) {
-        const unit = night ? (DISTANCE_UNIT/1.2) : DISTANCE_UNIT;
-        fare += Math.ceil((meterProgress-BASE_DISTANCE)/unit) * DISTANCE_FARE_UNIT;
-      }
-      return Math.round(fare/10)*10;
-    }
-
-    function calculateReplayFixedFare(log, distanceKm) {
-      const d=Math.max(0,Number(distanceKm)||0);
-      let step=0;
-      if(d>BASE_DISTANCE) step=Math.ceil((d-BASE_DISTANCE)/DISTANCE_UNIT);
-      let fare;
-      if(log.isNight){
-        fare=(FIXED_BASE_FARE*FIXED_FARE_COEFFICIENT)+(FIXED_DISTANCE_FARE_UNIT*FIXED_FARE_COEFFICIENT*step);
-      }else{
-        fare=FIXED_BASE_FARE+(FIXED_DISTANCE_FARE_UNIT*step);
-      }
-      if(log.isDispatch) fare+=DISPATCH_FEE;
-      return Math.floor(fare/10)*10;
-    }
-
-    function getReplayStateAt(ms) {
-      const d=replayData;
-      let seg=d.segments[0];
-      for(let i=0;i<d.segments.length;i++){
-        if(ms<=d.segments[i].endElapsed){seg=d.segments[i];break;}
-        seg=d.segments[i];
-      }
-      const prevEnd=seg===d.segments[0]?0:d.segments[d.segments.indexOf(seg)-1].endElapsed;
-      const local=seg.dt>0?Math.min(1,Math.max(0,(ms-prevEnd)/seg.dt)):1;
-      const lat=seg.a.lat+(seg.b.lat-seg.a.lat)*local;
-      const lng=seg.a.lng+(seg.b.lng-seg.a.lng)*local;
-      const occStart = seg.occDistance - (seg.phase === 'red' ? seg.dist : 0);
-      const occ = occStart + (seg.phase === 'red' ? seg.dist * local : 0);
-
-      // ここが今回の修正点。
-      // セグメント内のメーター進行量は「GPS距離」だけではなく、
-      // 10km/h以下だった時間分も含めて補間する。
-      const meterStart = Number.isFinite(seg.startMeterProgress) ? seg.startMeterProgress : 0;
-      const meterEnd = Number.isFinite(seg.meterProgress) ? seg.meterProgress : meterStart;
-      const meterProg = Math.max(0, meterStart + (meterEnd - meterStart) * local);
-
-      return {lat,lng,occDistance:Math.max(0,occ),meterProgress:meterProg,phase:seg.phase};
-    }
-
-    function updateReplayUI(ms) {
-      if(!replayData) return;
-      const state=getReplayStateAt(Math.min(ms,replayData.durationMs));
-      const meterFare=ms>=replayData.durationMs-1 ? replayData.finalTargetFare : calculateReplayMeterFare(replayData.log,state.meterProgress);
-      const fixedFare=ms>=replayData.durationMs-1 ? replayData.fixedTargetFare : calculateReplayFixedFare(replayData.log,state.occDistance);
-      const progress=Math.min(100,Math.max(0,ms/replayData.durationMs*100));
-      document.getElementById('replayMeterFare').innerText=`¥${meterFare.toLocaleString()}`;
-      document.getElementById('replayFixedFare').innerText=`¥${fixedFare.toLocaleString()}`;
-      document.getElementById('replayDistanceText').innerText=`実車距離 ${state.occDistance.toFixed(2)}km`;
-      const totalSec=Math.round(ms/1000), mm=Math.floor(totalSec/60), ss=totalSec%60;
-      document.getElementById('replayTimeText').innerText=`時間 ${String(mm).padStart(2,'0')}:${String(ss).padStart(2,'0')}`;
-      document.getElementById('replayProgressBar').style.width=`${progress}%`;
-      document.getElementById('replayPhaseBadge').innerText=state.phase==='red'?'🔴 実車区間':'🟡 迎車区間';
-      document.getElementById('replayPhaseBadge').className=`absolute bottom-2 left-2 z-[500] px-2 py-1 rounded-lg bg-slate-950/90 border text-[10px] font-bold shadow ${state.phase==='red'?'border-red-700 text-red-300':'border-amber-700 text-amber-300'}`;
-
-      // 車が通過した区間だけを軌跡として表示。未来のルートは表示しない。
-      if (replayMap && replayData && Array.isArray(replayData.segments)) {
-        if (window.replayTrailLayers) {
-          window.replayTrailLayers.forEach(layer => { try { replayMap.removeLayer(layer); } catch(e) {} });
-        }
-        window.replayTrailLayers = [];
-        const currentMs = Math.min(ms, replayData.durationMs);
-        replayData.segments.forEach((seg, index) => {
-          const segStart = index === 0 ? 0 : replayData.segments[index - 1].endElapsed;
-          if (currentMs <= segStart) return;
-          const ratio = seg.dt > 0 ? Math.min(1, Math.max(0, (currentMs - segStart) / seg.dt)) : 1;
-          const endLat = seg.a.lat + (seg.b.lat - seg.a.lat) * ratio;
-          const endLng = seg.a.lng + (seg.b.lng - seg.a.lng) * ratio;
-          const layer = L.polyline([[seg.a.lat,seg.a.lng],[endLat,endLng]], {
-            color: seg.phase === 'red' ? '#ef4444' : '#f59e0b',
-            weight: 5, opacity: .95, lineCap: 'round', lineJoin: 'round'
-          }).addTo(replayMap);
-          window.replayTrailLayers.push(layer);
-        });
-      }
-      if(replayMarker){ replayMarker.setLatLng([state.lat,state.lng]); }
-      if(ms>=replayData.durationMs-1){
-        const diff=Math.abs(replayData.finalTargetFare-replayData.fixedTargetFare);
-        const winner=replayData.finalTargetFare<replayData.fixedTargetFare?'メーター運賃のほうが安い':replayData.finalTargetFare>replayData.fixedTargetFare?'事前確定運賃のほうが安い':'同額';
-        document.getElementById('replayWinnerText').innerText=`🏁 ${winner}`;
-        document.getElementById('replayDiffText').innerText=`差額 ¥${diff.toLocaleString()} ／ メーター ¥${replayData.finalTargetFare.toLocaleString()} vs 事前確定 ¥${replayData.fixedTargetFare.toLocaleString()}`;
-        document.getElementById('replayRecordText').innerText=`${replayData.log.date || ''} ・ ${replayData.occupiedDist.toFixed(2)}km ・ ${formatDuration(replayData.log.timeSec || 0)}`;
-        document.getElementById('replayResult').classList.remove('hidden');
-      }
     }
 
     // 履歴カードから直接呼び出す入口。
@@ -2949,6 +2858,47 @@
     </div>
   </div>
 </div>
+
+
+<div id="firstUseDisclaimer" role="dialog" aria-modal="true" aria-labelledby="firstUseDisclaimerTitle">
+  <div class="disclaimer-panel">
+    <div class="text-center mb-3"><div class="text-4xl mb-2">⚠️</div><h2 id="firstUseDisclaimerTitle">本アプリ使用上の重要な注意</h2><p class="text-xs text-slate-400 mt-1">初回使用時に必ず確認してください</p></div>
+    <ul class="list-disc pl-5 text-sm">
+      <li><b class="text-amber-300">開発目的：</b>事前確定運賃、アプリ内のメーター計算額、走行距離から算出した金額を比較・検証するための参考ツールです。</li>
+      <li><b class="text-red-300">タクシーメーターとして使用禁止：</b>本アプリは法令上のタクシーメーターではなく、営業運賃の決定・請求・収受には使用できません。本アプリの金額を根拠に乗客から現金等を受け取るなど、無許可で有償運送を行うことは、いわゆる「白タク行為」等の法令違反となるおそれがあります。</li>
+      <li><b class="text-amber-300">計算誤差：</b>GPSの測位精度、通信状況、地図ルート、端末性能、時間・距離の記録状況などにより、距離・時間・運賃の計算や比較結果に誤差が生じる場合があります。正確性や実際の運賃との一致を保証するものではありません。</li>
+      <li><b class="text-slate-200">利用者の責任：</b>本アプリは利用者自身の判断と責任で使用してください。利用に関連して発生した損害、紛争、損失等について、開発者は一切の責任を負いません。ただし、適用法令上、免責が認められない場合を除きます。</li>
+    </ul>
+    <label class="disclaimer-check"><input id="firstUseDisclaimerCheck" type="checkbox"><span>上記の注意事項をすべて読み、理解しました。本アプリを運賃の請求・収受に使用せず、比較・検証目的でのみ使用します。</span></label>
+    <button id="firstUseContinue" type="button" disabled class="w-full mt-4 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold py-3 px-4">同意してアプリを使用する</button>
+    <p class="text-[10px] text-slate-500 text-center mt-3">同意状態はこの端末・ブラウザに保存されます。ブラウザデータを消去すると再表示されます。</p>
+  </div>
+</div>
+<script id="firstUseDisclaimerLogic">
+(function(){
+  const STORAGE_KEY = 'taxi_meter_first_use_disclaimer_accepted_v1';
+  function setupFirstUseDisclaimer(){
+    const overlay = document.getElementById('firstUseDisclaimer');
+    const check = document.getElementById('firstUseDisclaimerCheck');
+    const button = document.getElementById('firstUseContinue');
+    if (!overlay || !check || !button) return;
+    let accepted = false;
+    try { accepted = localStorage.getItem(STORAGE_KEY) === 'yes'; } catch(e) {}
+    if (accepted) return;
+    overlay.style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+    check.addEventListener('change', function(){ button.disabled = !check.checked; });
+    button.addEventListener('click', function(){
+      if (!check.checked) return;
+      try { localStorage.setItem(STORAGE_KEY, 'yes'); } catch(e) {}
+      overlay.style.display = 'none';
+      document.body.style.overflow = '';
+    });
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', setupFirstUseDisclaimer);
+  else setupFirstUseDisclaimer();
+})();
+</script>
 
 </body>
 </html>
